@@ -21,7 +21,8 @@ use tokio::sync::Mutex;
 
 #[test]
 fn test_get_command_uses_default_shell_when_unspecified() -> anyhow::Result<()> {
-    let json = r#"{"cmd": "echo hello"}"#;
+    let json =
+        r#"{"cmd":"echo hello","what":"print greeting text","why":"verify default shell behavior"}"#;
 
     let args: ExecCommandArgs = parse_arguments(json)?;
 
@@ -42,7 +43,7 @@ fn test_get_command_uses_default_shell_when_unspecified() -> anyhow::Result<()> 
 
 #[test]
 fn test_get_command_respects_explicit_bash_shell() -> anyhow::Result<()> {
-    let json = r#"{"cmd": "echo hello", "shell": "/bin/bash"}"#;
+    let json = r#"{"cmd":"echo hello","what":"print greeting text","why":"verify explicit bash shell behavior","shell":"/bin/bash"}"#;
 
     let args: ExecCommandArgs = parse_arguments(json)?;
 
@@ -68,7 +69,7 @@ fn test_get_command_respects_explicit_bash_shell() -> anyhow::Result<()> {
 
 #[test]
 fn test_get_command_respects_explicit_powershell_shell() -> anyhow::Result<()> {
-    let json = r#"{"cmd": "echo hello", "shell": "powershell"}"#;
+    let json = r#"{"cmd":"echo hello","what":"print greeting text","why":"verify explicit powershell shell behavior","shell":"powershell"}"#;
 
     let args: ExecCommandArgs = parse_arguments(json)?;
 
@@ -88,7 +89,7 @@ fn test_get_command_respects_explicit_powershell_shell() -> anyhow::Result<()> {
 
 #[test]
 fn test_get_command_respects_explicit_cmd_shell() -> anyhow::Result<()> {
-    let json = r#"{"cmd": "echo hello", "shell": "cmd"}"#;
+    let json = r#"{"cmd":"echo hello","what":"print greeting text","why":"verify explicit cmd shell behavior","shell":"cmd"}"#;
 
     let args: ExecCommandArgs = parse_arguments(json)?;
 
@@ -108,7 +109,7 @@ fn test_get_command_respects_explicit_cmd_shell() -> anyhow::Result<()> {
 
 #[test]
 fn test_get_command_rejects_explicit_login_when_disallowed() -> anyhow::Result<()> {
-    let json = r#"{"cmd": "echo hello", "login": true}"#;
+    let json = r#"{"cmd":"echo hello","what":"print greeting text","why":"verify disallowed login shell behavior","login":true}"#;
 
     let args: ExecCommandArgs = parse_arguments(json)?;
     let err = get_command(
@@ -172,6 +173,8 @@ fn exec_command_args_resolve_relative_additional_permissions_against_workdir() -
     let expected_write = workdir.join("relative-write.txt");
     let json = r#"{
             "cmd": "echo hello",
+            "what": "print greeting text",
+            "why": "verify permission path resolution",
             "workdir": "nested",
             "additional_permissions": {
                 "file_system": {
@@ -323,5 +326,45 @@ fn exec_command_post_tool_use_payload_skips_running_sessions() {
     assert_eq!(
         UnifiedExecHandler.post_tool_use_payload("call-45", &payload, &output),
         None
+    );
+}
+
+#[test]
+fn test_exec_command_requires_what_and_why() {
+    let json_missing_what = r#"{"cmd":"echo hello","why":"verify shell behavior"}"#;
+    let err_missing_what = parse_arguments::<ExecCommandArgs>(json_missing_what)
+        .expect_err("missing what should fail argument parsing");
+    assert!(
+        err_missing_what
+            .to_string()
+            .contains("missing field `what`")
+    );
+
+    let json_missing_why = r#"{"cmd":"echo hello","what":"print greeting text"}"#;
+    let err_missing_why = parse_arguments::<ExecCommandArgs>(json_missing_why)
+        .expect_err("missing why should fail argument parsing");
+    assert!(err_missing_why.to_string().contains("missing field `why`"));
+}
+
+#[test]
+fn test_exec_command_rejects_blank_what_and_why() {
+    assert!(
+        validate_command_purpose("exec_command", "run test command", "verify behavior").is_ok()
+    );
+
+    let blank_what = validate_command_purpose("exec_command", "  ", "verify behavior")
+        .expect_err("blank what should be rejected");
+    assert!(
+        blank_what
+            .to_string()
+            .contains("requires non-empty `what` and `why`")
+    );
+
+    let blank_why = validate_command_purpose("exec_command", "run test command", "  ")
+        .expect_err("blank why should be rejected");
+    assert!(
+        blank_why
+            .to_string()
+            .contains("requires non-empty `what` and `why`")
     );
 }

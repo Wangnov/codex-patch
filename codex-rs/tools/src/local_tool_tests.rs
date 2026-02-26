@@ -41,6 +41,22 @@ Examples of valid command strings:
             },
         ),
         (
+            "what".to_string(),
+            JsonSchema::String {
+                description: Some(
+                    "A short action summary of what this command is doing.".to_string(),
+                ),
+            },
+        ),
+        (
+            "why".to_string(),
+            JsonSchema::String {
+                description: Some(
+                    "A short reason explaining why this command should be run.".to_string(),
+                ),
+            },
+        ),
+        (
             "workdir".to_string(),
             JsonSchema::String {
                 description: Some("The working directory to execute the command in".to_string()),
@@ -97,7 +113,11 @@ Examples of valid command strings:
             defer_loading: None,
             parameters: JsonSchema::Object {
                 properties,
-                required: Some(vec!["command".to_string()]),
+                required: Some(vec![
+                    "command".to_string(),
+                    "what".to_string(),
+                    "why".to_string(),
+                ]),
                 additional_properties: Some(false.into()),
             },
             output_schema: None,
@@ -127,6 +147,22 @@ fn exec_command_tool_matches_expected_spec() {
             "cmd".to_string(),
             JsonSchema::String {
                 description: Some("Shell command to execute.".to_string()),
+            },
+        ),
+        (
+            "what".to_string(),
+            JsonSchema::String {
+                description: Some(
+                    "A short action summary of what this command is doing.".to_string(),
+                ),
+            },
+        ),
+        (
+            "why".to_string(),
+            JsonSchema::String {
+                description: Some(
+                    "A short reason explaining why this command should be run.".to_string(),
+                ),
             },
         ),
         (
@@ -194,7 +230,11 @@ fn exec_command_tool_matches_expected_spec() {
             defer_loading: None,
             parameters: JsonSchema::Object {
                 properties,
-                required: Some(vec!["cmd".to_string()]),
+                required: Some(vec![
+                    "cmd".to_string(),
+                    "what".to_string(),
+                    "why".to_string(),
+                ]),
                 additional_properties: Some(false.into()),
             },
             output_schema: Some(unified_exec_output_schema()),
@@ -272,6 +312,22 @@ fn shell_tool_with_request_permission_includes_additional_permissions() {
             },
         ),
         (
+            "what".to_string(),
+            JsonSchema::String {
+                description: Some(
+                    "A short action summary of what this command is doing.".to_string(),
+                ),
+            },
+        ),
+        (
+            "why".to_string(),
+            JsonSchema::String {
+                description: Some(
+                    "A short reason explaining why this command should be run.".to_string(),
+                ),
+            },
+        ),
+        (
             "workdir".to_string(),
             JsonSchema::String {
                 description: Some("The working directory to execute the command in".to_string()),
@@ -320,7 +376,11 @@ Examples of valid command strings:
             defer_loading: None,
             parameters: JsonSchema::Object {
                 properties,
-                required: Some(vec!["command".to_string()]),
+                required: Some(vec![
+                    "command".to_string(),
+                    "what".to_string(),
+                    "why".to_string(),
+                ]),
                 additional_properties: Some(false.into()),
             },
             output_schema: None,
@@ -399,6 +459,22 @@ Examples of valid command strings:
             },
         ),
         (
+            "what".to_string(),
+            JsonSchema::String {
+                description: Some(
+                    "A short action summary of what this command is doing.".to_string(),
+                ),
+            },
+        ),
+        (
+            "why".to_string(),
+            JsonSchema::String {
+                description: Some(
+                    "A short reason explaining why this command should be run.".to_string(),
+                ),
+            },
+        ),
+        (
             "workdir".to_string(),
             JsonSchema::String {
                 description: Some("The working directory to execute the command in".to_string()),
@@ -433,7 +509,11 @@ Examples of valid command strings:
             defer_loading: None,
             parameters: JsonSchema::Object {
                 properties,
-                required: Some(vec!["command".to_string()]),
+                required: Some(vec![
+                    "command".to_string(),
+                    "what".to_string(),
+                    "why".to_string(),
+                ]),
                 additional_properties: Some(false.into()),
             },
             output_schema: None,

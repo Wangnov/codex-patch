@@ -40,6 +40,8 @@ pub struct UnifiedExecHandler;
 #[derive(Debug, Deserialize)]
 pub(crate) struct ExecCommandArgs {
     cmd: String,
+    what: String,
+    why: String,
     #[serde(default)]
     pub(crate) workdir: Option<String>,
     #[serde(default)]
@@ -86,6 +88,23 @@ fn default_tty() -> bool {
     false
 }
 
+fn has_non_empty_command_purpose(what: &str, why: &str) -> bool {
+    !what.trim().is_empty() && !why.trim().is_empty()
+}
+
+fn validate_command_purpose(
+    tool_name: &str,
+    what: &str,
+    why: &str,
+) -> Result<(), FunctionCallError> {
+    if has_non_empty_command_purpose(what, why) {
+        Ok(())
+    } else {
+        Err(FunctionCallError::RespondToModel(format!(
+            "`{tool_name}` requires non-empty `what` and `why` arguments."
+        )))
+    }
+}
 #[async_trait]
 impl ToolHandler for UnifiedExecHandler {
     type Output = ExecCommandToolOutput;
@@ -110,6 +129,9 @@ impl ToolHandler for UnifiedExecHandler {
         let Ok(params) = parse_arguments::<ExecCommandArgs>(arguments) else {
             return true;
         };
+        if !has_non_empty_command_purpose(&params.what, &params.why) {
+            return true;
+        }
         let command = match get_command(
             &params,
             invocation.session.user_shell(),
@@ -187,6 +209,7 @@ impl ToolHandler for UnifiedExecHandler {
                 let args: ExecCommandArgs =
                     parse_arguments_with_base_path(&arguments, cwd.as_path())?;
                 let workdir = context.turn.resolve_path(args.workdir.clone());
+                validate_command_purpose(tool_name.as_str(), &args.what, &args.why)?;
                 maybe_emit_implicit_skill_invocation(
                     session.as_ref(),
                     context.turn.as_ref(),
@@ -205,6 +228,8 @@ impl ToolHandler for UnifiedExecHandler {
                 let command_for_display = codex_shell_command::parse_command::shlex_join(&command);
 
                 let ExecCommandArgs {
+                    what,
+                    why,
                     workdir,
                     tty,
                     yield_time_ms,
@@ -320,6 +345,8 @@ impl ToolHandler for UnifiedExecHandler {
                                 .permissions_preapproved,
                             justification,
                             prefix_rule,
+                            what: Some(what),
+                            why: Some(why),
                         },
                         &context,
                     )
