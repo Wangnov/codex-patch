@@ -147,7 +147,13 @@ impl Approvable<ShellRequest> for ShellRuntime {
         let command = req.command.clone();
         let cwd = req.cwd.clone();
         let retry_reason = ctx.retry_reason.clone();
-        let reason = retry_reason.clone().or_else(|| req.justification.clone());
+        let reason = retry_reason
+            .clone()
+            .or_else(|| req.justification.clone())
+            .or_else(|| match (&req.what, &req.why) {
+                (Some(what), Some(why)) => Some(format!("WHAT: {what}\nWHY: {why}")),
+                _ => None,
+            });
         let session = ctx.session;
         let turn = ctx.turn;
         let call_id = ctx.call_id.to_string();

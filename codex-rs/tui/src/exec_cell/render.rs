@@ -12,6 +12,7 @@ use crate::shimmer::shimmer_spans;
 use crate::wrapping::RtOptions;
 use crate::wrapping::adaptive_wrap_line;
 use crate::wrapping::adaptive_wrap_lines;
+use crate::wrapping::word_wrap_line;
 use codex_ansi_escape::ansi_escape_line;
 use codex_protocol::parse_command::ParsedCommand;
 use codex_protocol::protocol::ExecCommandSource;
@@ -44,6 +45,8 @@ pub(crate) fn new_active_exec_command(
     parsed: Vec<ParsedCommand>,
     source: ExecCommandSource,
     interaction_input: Option<String>,
+    what: Option<String>,
+    why: Option<String>,
     animations_enabled: bool,
 ) -> ExecCell {
     ExecCell::new(
@@ -51,6 +54,8 @@ pub(crate) fn new_active_exec_command(
             call_id,
             command,
             parsed,
+            what,
+            why,
             output: None,
             source,
             start_time: Some(Instant::now()),
@@ -220,6 +225,10 @@ impl HistoryCell for ExecCell {
                     .subsequent_indent("    ".into()),
             );
             lines.extend(cmd_display);
+            let reasoning_lines = Self::command_reasoning_lines(call, width.max(1));
+            if !reasoning_lines.is_empty() {
+                lines.extend(reasoning_lines);
+            }
 
             if let Some(output) = call.output.as_ref() {
                 if !call.is_unified_exec_interaction() {
@@ -356,9 +365,40 @@ impl ExecCell {
                 );
                 push_owned_lines(&wrapped, &mut out_indented);
             }
+
+            let reasoning_lines =
+                Self::command_reasoning_lines(&call, width.saturating_sub(4).max(1));
+            if !reasoning_lines.is_empty() {
+                out_indented.extend(reasoning_lines);
+            }
         }
 
         out.extend(prefix_lines(out_indented, "  └ ".dim(), "    ".into()));
+        out
+    }
+
+    fn command_reasoning_lines(call: &ExecCall, width: u16) -> Vec<Line<'static>> {
+        let mut out = Vec::new();
+        let rows = [("WHAT", call.what.as_deref()), ("WHY", call.why.as_deref())];
+        for (label, value) in rows {
+            let Some(value) = value else {
+                continue;
+            };
+            if value.trim().is_empty() {
+                continue;
+            }
+            let content = Line::from(value.to_string());
+            let initial_indent = Line::from(vec![label.cyan().bold(), " ".into()]);
+            let subsequent_indent = " ".repeat(initial_indent.width()).into();
+            let wrapped = word_wrap_line(
+                &content,
+                RtOptions::new(width as usize)
+                    .initial_indent(initial_indent)
+                    .subsequent_indent(subsequent_indent)
+                    .word_splitter(WordSplitter::NoHyphenation),
+            );
+            push_owned_lines(&wrapped, &mut out);
+        }
         out
     }
 
@@ -436,6 +476,16 @@ impl ExecCell {
                 continuation_lines,
                 Span::from(layout.command_continuation.initial_prefix).dim(),
                 Span::from(layout.command_continuation.subsequent_prefix).dim(),
+            ));
+        }
+
+        let reasoning_lines =
+            Self::command_reasoning_lines(call, layout.output_block.wrap_width(width) as u16);
+        if !reasoning_lines.is_empty() {
+            lines.extend(prefix_lines(
+                reasoning_lines,
+                Span::from(layout.output_block.initial_prefix).dim(),
+                Span::from(layout.output_block.subsequent_prefix).dim(),
             ));
         }
 
@@ -715,6 +765,7 @@ mod tests {
     use super::*;
     use codex_protocol::protocol::ExecCommandSource;
     use pretty_assertions::assert_eq;
+    use std::path::PathBuf;
 
     fn render_line_text(line: &Line<'static>) -> String {
         line.spans
@@ -782,6 +833,8 @@ mod tests {
             call_id: "call-id".to_string(),
             command: vec!["bash".into(), "-lc".into(), "echo long".into()],
             parsed: Vec::new(),
+            what: None,
+            why: None,
             output: Some(output),
             source: ExecCommandSource::UserShell,
             start_time: None,
@@ -931,6 +984,8 @@ mod tests {
             call_id: "call-id".to_string(),
             command: vec!["bash".into(), "-lc".into(), format!("echo {url}")],
             parsed: Vec::new(),
+            what: None,
+            why: None,
             output: None,
             source: ExecCommandSource::UserShell,
             start_time: None,
@@ -968,6 +1023,8 @@ mod tests {
                 query: Some(url_like.to_string()),
                 path: None,
             }],
+            what: None,
+            why: None,
             output: None,
             source: ExecCommandSource::Agent,
             start_time: None,
@@ -1005,6 +1062,8 @@ mod tests {
             call_id: "call-id".to_string(),
             command: vec!["bash".into(), "-lc".into(), "echo done".into()],
             parsed: Vec::new(),
+            what: None,
+            why: None,
             output: Some(CommandOutput {
                 exit_code: 0,
                 formatted_output: String::new(),
@@ -1042,6 +1101,8 @@ mod tests {
             call_id: "call-id".to_string(),
             command: vec!["bash".into(), "-lc".into(), "echo done".into()],
             parsed: Vec::new(),
+            what: None,
+            why: None,
             output: Some(CommandOutput {
                 exit_code: 0,
                 formatted_output: url.to_string(),
@@ -1062,5 +1123,108 @@ mod tests {
             wrapped_height > logical_height,
             "expected transcript height to account for wrapped URL-like rows, logical_height={logical_height}, wrapped_height={wrapped_height}"
         );
+    }
+
+    #[test]
+    fn command_display_renders_what_and_why_metadata() {
+        let call = ExecCall {
+            call_id: "call-meta".to_string(),
+            command: vec!["bash".into(), "-lc".into(), "echo hi".into()],
+            parsed: Vec::new(),
+            what: Some("print greeting text".to_string()),
+            why: Some("verify WHAT and WHY are visible in the TUI".to_string()),
+            output: None,
+            source: ExecCommandSource::Agent,
+            start_time: None,
+            duration: None,
+            interaction_input: None,
+        };
+        let cell = ExecCell::new(call, false);
+        let rendered = cell
+            .command_display_lines(80)
+            .into_iter()
+            .map(|line| {
+                line.spans
+                    .into_iter()
+                    .map(|span| span.content)
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("WHAT"));
+        assert!(rendered.contains("print greeting text"));
+        assert!(rendered.contains("WHY"));
+        assert!(rendered.contains("verify WHAT and WHY are visible in the TUI"));
+    }
+
+    #[test]
+    fn transcript_renders_what_and_why_metadata() {
+        let call = ExecCall {
+            call_id: "call-transcript-meta".to_string(),
+            command: vec!["bash".into(), "-lc".into(), "echo hi".into()],
+            parsed: Vec::new(),
+            what: Some("print greeting text".to_string()),
+            why: Some("verify WHAT and WHY are visible in transcript view".to_string()),
+            output: None,
+            source: ExecCommandSource::Agent,
+            start_time: None,
+            duration: None,
+            interaction_input: None,
+        };
+        let cell = ExecCell::new(call, false);
+        let rendered = cell
+            .transcript_lines(80)
+            .into_iter()
+            .map(|line| {
+                line.spans
+                    .into_iter()
+                    .map(|span| span.content)
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("WHAT"));
+        assert!(rendered.contains("print greeting text"));
+        assert!(rendered.contains("WHY"));
+        assert!(rendered.contains("verify WHAT and WHY are visible in transcript view"));
+    }
+
+    #[test]
+    fn exploring_display_renders_what_and_why_metadata() {
+        let call = ExecCall {
+            call_id: "call-exploring-meta".to_string(),
+            command: vec!["cat".into(), "README.md".into()],
+            parsed: vec![ParsedCommand::Read {
+                cmd: "cat README.md".to_string(),
+                name: "README.md".to_string(),
+                path: PathBuf::from("README.md"),
+            }],
+            what: Some("inspect README content".to_string()),
+            why: Some("confirm WHAT and WHY are visible in exploring view".to_string()),
+            output: None,
+            source: ExecCommandSource::Agent,
+            start_time: None,
+            duration: None,
+            interaction_input: None,
+        };
+        let cell = ExecCell::new(call, false);
+        let rendered = cell
+            .exploring_display_lines(80)
+            .into_iter()
+            .map(|line| {
+                line.spans
+                    .into_iter()
+                    .map(|span| span.content)
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("WHAT"));
+        assert!(rendered.contains("inspect README content"));
+        assert!(rendered.contains("WHY"));
+        assert!(rendered.contains("confirm WHAT and WHY are visible in exploring view"));
     }
 }

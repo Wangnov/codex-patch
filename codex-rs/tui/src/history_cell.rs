@@ -4010,6 +4010,8 @@ mod tests {
                 start_time: Some(Instant::now()),
                 duration: None,
                 interaction_input: None,
+                what: None,
+                why: None,
             },
             /*animations_enabled*/ true,
         );
@@ -4037,6 +4039,8 @@ mod tests {
                 start_time: Some(Instant::now()),
                 duration: None,
                 interaction_input: None,
+                what: None,
+                why: None,
             },
             /*animations_enabled*/ true,
         );
@@ -4054,6 +4058,8 @@ mod tests {
                 }],
                 ExecCommandSource::Agent,
                 /*interaction_input*/ None,
+                /*what*/ None,
+                /*why*/ None,
             )
             .unwrap();
         cell.complete_call("c2", CommandOutput::default(), Duration::from_millis(1));
@@ -4069,6 +4075,8 @@ mod tests {
                 }],
                 ExecCommandSource::Agent,
                 /*interaction_input*/ None,
+                /*what*/ None,
+                /*why*/ None,
             )
             .unwrap();
         cell.complete_call("c3", CommandOutput::default(), Duration::from_millis(1));
@@ -4106,6 +4114,8 @@ mod tests {
                 start_time: Some(Instant::now()),
                 duration: None,
                 interaction_input: None,
+                what: None,
+                why: None,
             },
             /*animations_enabled*/ true,
         );
@@ -4130,6 +4140,8 @@ mod tests {
                 start_time: Some(Instant::now()),
                 duration: None,
                 interaction_input: None,
+                what: None,
+                why: None,
             },
             /*animations_enabled*/ true,
         );
@@ -4156,6 +4168,8 @@ mod tests {
                 start_time: Some(Instant::now()),
                 duration: None,
                 interaction_input: None,
+                what: None,
+                why: None,
             },
             /*animations_enabled*/ true,
         );
@@ -4180,6 +4194,8 @@ mod tests {
                 start_time: Some(Instant::now()),
                 duration: None,
                 interaction_input: None,
+                what: None,
+                why: None,
             },
             /*animations_enabled*/ true,
         );
@@ -4203,6 +4219,8 @@ mod tests {
                 start_time: Some(Instant::now()),
                 duration: None,
                 interaction_input: None,
+                what: None,
+                why: None,
             },
             /*animations_enabled*/ true,
         );
@@ -4227,6 +4245,8 @@ mod tests {
                 start_time: Some(Instant::now()),
                 duration: None,
                 interaction_input: None,
+                what: None,
+                why: None,
             },
             /*animations_enabled*/ true,
         );
@@ -4251,6 +4271,8 @@ mod tests {
                 start_time: Some(Instant::now()),
                 duration: None,
                 interaction_input: None,
+                what: None,
+                why: None,
             },
             /*animations_enabled*/ true,
         );
@@ -4301,6 +4323,8 @@ mod tests {
                 start_time: Some(Instant::now()),
                 duration: None,
                 interaction_input: None,
+                what: None,
+                why: None,
             },
             /*animations_enabled*/ true,
         );

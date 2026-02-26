@@ -403,6 +403,8 @@ struct RunningCommand {
     command: Vec<String>,
     parsed_cmd: Vec<ParsedCommand>,
     source: ExecCommandSource,
+    what: Option<String>,
+    why: Option<String>,
 }
 
 struct UnifiedExecProcessSummary {
@@ -4439,9 +4441,15 @@ impl ChatWidget {
         if self.suppressed_exec_calls.remove(&ev.call_id) {
             return;
         }
-        let (command, parsed, source) = match running {
-            Some(rc) => (rc.command, rc.parsed_cmd, rc.source),
-            None => (ev.command.clone(), ev.parsed_cmd.clone(), ev.source),
+        let (command, parsed, source, what, why) = match running {
+            Some(rc) => (rc.command, rc.parsed_cmd, rc.source, rc.what, rc.why),
+            None => (
+                ev.command.clone(),
+                ev.parsed_cmd.clone(),
+                ev.source,
+                ev.what.clone(),
+                ev.why.clone(),
+            ),
         };
         let parsed = self.annotate_skill_reads_in_parsed_cmd(parsed);
         let is_unified_exec_interaction =
@@ -4503,6 +4511,8 @@ impl ChatWidget {
                     parsed,
                     source,
                     ev.interaction_input.clone(),
+                    what.clone(),
+                    why.clone(),
                     self.config.animations,
                 );
                 let completed = orphan.complete_call(&ev.call_id, output, ev.duration);
@@ -4524,6 +4534,8 @@ impl ChatWidget {
                     parsed,
                     source,
                     ev.interaction_input.clone(),
+                    what,
+                    why,
                     self.config.animations,
                 );
                 let completed = cell.complete_call(&ev.call_id, output, ev.duration);
@@ -4674,6 +4686,8 @@ impl ChatWidget {
                 command: ev.command.clone(),
                 parsed_cmd: parsed_cmd.clone(),
                 source: ev.source,
+                what: ev.what.clone(),
+                why: ev.why.clone(),
             },
         );
         let is_wait_interaction = matches!(ev.source, ExecCommandSource::UnifiedExecInteraction)
@@ -4708,6 +4722,8 @@ impl ChatWidget {
                 parsed_cmd.clone(),
                 ev.source,
                 interaction_input.clone(),
+                ev.what.clone(),
+                ev.why.clone(),
             )
         {
             *cell = new_exec;
@@ -4721,6 +4737,8 @@ impl ChatWidget {
                 parsed_cmd,
                 ev.source,
                 interaction_input,
+                ev.what,
+                ev.why,
                 self.config.animations,
             )));
             self.bump_active_cell_revision();
