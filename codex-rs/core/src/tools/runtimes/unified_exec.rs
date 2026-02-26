@@ -126,7 +126,13 @@ impl Approvable<UnifiedExecRequest> for UnifiedExecRuntime<'_> {
         let command = req.command.clone();
         let cwd = req.cwd.to_path_buf();
         let retry_reason = ctx.retry_reason.clone();
-        let reason = retry_reason.clone().or_else(|| req.justification.clone());
+        let reason = retry_reason
+            .clone()
+            .or_else(|| req.justification.clone())
+            .or_else(|| match (&req.what, &req.why) {
+                (Some(what), Some(why)) => Some(format!("WHAT: {what}\nWHY: {why}")),
+                _ => None,
+            });
         let guardian_review_id = ctx.guardian_review_id.clone();
         Box::pin(async move {
             if let Some(review_id) = guardian_review_id {

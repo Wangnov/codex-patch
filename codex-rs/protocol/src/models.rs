@@ -1064,6 +1064,12 @@ pub struct SearchToolCallParams {
 #[derive(Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
 pub struct ShellToolCallParams {
     pub command: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub what: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub why: Option<String>,
     pub workdir: Option<String>,
 
     /// This is the maximum time in milliseconds that the command is allowed to run.
@@ -1088,6 +1094,12 @@ pub struct ShellToolCallParams {
 #[derive(Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
 pub struct ShellCommandToolCallParams {
     pub command: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub what: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub why: Option<String>,
     pub workdir: Option<String>,
 
     /// Whether to run the shell with login shell semantics
@@ -2403,6 +2415,8 @@ mod tests {
     fn deserialize_shell_tool_call_params() -> Result<()> {
         let json = r#"{
             "command": ["ls", "-l"],
+            "what": "list directory entries",
+            "why": "inspect files in the current working directory",
             "workdir": "/tmp",
             "timeout": 1000
         }"#;
@@ -2411,6 +2425,8 @@ mod tests {
         assert_eq!(
             ShellToolCallParams {
                 command: vec!["ls".to_string(), "-l".to_string()],
+                what: Some("list directory entries".to_string()),
+                why: Some("inspect files in the current working directory".to_string()),
                 workdir: Some("/tmp".to_string()),
                 timeout_ms: Some(1000),
                 sandbox_permissions: None,
