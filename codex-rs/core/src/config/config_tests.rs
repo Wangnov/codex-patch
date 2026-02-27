@@ -4506,8 +4506,9 @@ fn test_precedence_fixture_with_o3_profile() -> std::io::Result<()> {
                 windows_sandbox_mode: None,
                 windows_sandbox_private_desktop: true,
             },
+            shnote: true,
             approvals_reviewer: ApprovalsReviewer::User,
-            enforce_residency: Constrained::allow_any(/*initial_value*/ None),
+            enforce_residency: Constrained::allow_any(None),
             user_instructions: None,
             user_instructions_path: None,
             notify: None,
@@ -4652,8 +4653,9 @@ fn test_precedence_fixture_with_gpt3_profile() -> std::io::Result<()> {
             windows_sandbox_mode: None,
             windows_sandbox_private_desktop: true,
         },
+        shnote: true,
         approvals_reviewer: ApprovalsReviewer::User,
-        enforce_residency: Constrained::allow_any(/*initial_value*/ None),
+        enforce_residency: Constrained::allow_any(None),
         user_instructions: None,
         user_instructions_path: None,
         notify: None,
@@ -4796,8 +4798,9 @@ fn test_precedence_fixture_with_zdr_profile() -> std::io::Result<()> {
             windows_sandbox_mode: None,
             windows_sandbox_private_desktop: true,
         },
+        shnote: true,
         approvals_reviewer: ApprovalsReviewer::User,
-        enforce_residency: Constrained::allow_any(/*initial_value*/ None),
+        enforce_residency: Constrained::allow_any(None),
         user_instructions: None,
         user_instructions_path: None,
         notify: None,
@@ -4926,8 +4929,9 @@ fn test_precedence_fixture_with_gpt5_profile() -> std::io::Result<()> {
             windows_sandbox_mode: None,
             windows_sandbox_private_desktop: true,
         },
+        shnote: true,
         approvals_reviewer: ApprovalsReviewer::User,
-        enforce_residency: Constrained::allow_any(/*initial_value*/ None),
+        enforce_residency: Constrained::allow_any(None),
         user_instructions: None,
         user_instructions_path: None,
         notify: None,
@@ -5537,6 +5541,40 @@ allow_login_shell = false
     )?;
 
     assert!(!config.permissions.allow_login_shell);
+    Ok(())
+}
+
+#[test]
+fn config_defaults_shnote_to_true() -> std::io::Result<()> {
+    let codex_home = TempDir::new()?;
+    let config = Config::load_from_base_config_with_overrides(
+        ConfigToml::default(),
+        ConfigOverrides::default(),
+        codex_home.path().to_path_buf(),
+    )?;
+
+    assert!(config.shnote);
+    Ok(())
+}
+
+#[test]
+fn config_loads_shnote_from_toml() -> std::io::Result<()> {
+    let codex_home = TempDir::new()?;
+    let cfg: ConfigToml = toml::from_str(
+        r#"
+model = "gpt-5.1"
+shnote = false
+"#,
+    )
+    .expect("TOML deserialization should succeed for shnote");
+
+    let config = Config::load_from_base_config_with_overrides(
+        cfg,
+        ConfigOverrides::default(),
+        codex_home.path().to_path_buf(),
+    )?;
+
+    assert!(!config.shnote);
     Ok(())
 }
 

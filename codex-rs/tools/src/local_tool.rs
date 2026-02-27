@@ -9,11 +9,13 @@ use std::collections::BTreeMap;
 pub struct CommandToolOptions {
     pub allow_login_shell: bool,
     pub exec_permission_approvals_enabled: bool,
+    pub require_command_purpose: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ShellToolOptions {
     pub exec_permission_approvals_enabled: bool,
+    pub require_command_purpose: bool,
 }
 
 pub fn create_exec_command_tool(options: CommandToolOptions) -> ToolSpec {
@@ -83,6 +85,12 @@ pub fn create_exec_command_tool(options: CommandToolOptions) -> ToolSpec {
         options.exec_permission_approvals_enabled,
     ));
 
+    let mut required = vec!["cmd".to_string()];
+    if options.require_command_purpose {
+        required.push("what".to_string());
+        required.push("why".to_string());
+    }
+
     ToolSpec::Function(ResponsesApiTool {
         name: "exec_command".to_string(),
         description: if cfg!(windows) {
@@ -98,11 +106,7 @@ pub fn create_exec_command_tool(options: CommandToolOptions) -> ToolSpec {
         defer_loading: None,
         parameters: JsonSchema::object(
             properties,
-            Some(vec![
-                "cmd".to_string(),
-                "what".to_string(),
-                "why".to_string(),
-            ]),
+            Some(required),
             Some(false.into()),
         ),
         output_schema: Some(unified_exec_output_schema()),
@@ -218,6 +222,12 @@ Examples of valid command strings:
             .to_string()
     };
 
+    let mut required = vec!["command".to_string()];
+    if options.require_command_purpose {
+        required.push("what".to_string());
+        required.push("why".to_string());
+    }
+
     ToolSpec::Function(ResponsesApiTool {
         name: "shell".to_string(),
         description,
@@ -225,11 +235,7 @@ Examples of valid command strings:
         defer_loading: None,
         parameters: JsonSchema::object(
             properties,
-            Some(vec![
-                "command".to_string(),
-                "what".to_string(),
-                "why".to_string(),
-            ]),
+            Some(required),
             Some(false.into()),
         ),
         output_schema: None,
@@ -308,6 +314,12 @@ Examples of valid command strings:
             .to_string()
     };
 
+    let mut required = vec!["command".to_string()];
+    if options.require_command_purpose {
+        required.push("what".to_string());
+        required.push("why".to_string());
+    }
+
     ToolSpec::Function(ResponsesApiTool {
         name: "shell_command".to_string(),
         description,
@@ -315,11 +327,7 @@ Examples of valid command strings:
         defer_loading: None,
         parameters: JsonSchema::object(
             properties,
-            Some(vec![
-                "command".to_string(),
-                "what".to_string(),
-                "why".to_string(),
-            ]),
+            Some(required),
             Some(false.into()),
         ),
         output_schema: None,

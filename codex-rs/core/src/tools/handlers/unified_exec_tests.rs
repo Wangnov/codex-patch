@@ -332,41 +332,55 @@ fn exec_command_post_tool_use_payload_skips_running_sessions() {
 }
 
 #[test]
-fn test_exec_command_requires_what_and_why() {
-    let json_missing_what = r#"{"cmd":"echo hello","why":"verify shell behavior"}"#;
-    let err_missing_what = parse_arguments::<ExecCommandArgs>(json_missing_what)
-        .expect_err("missing what should fail argument parsing");
-    assert!(
-        err_missing_what
-            .to_string()
-            .contains("missing field `what`")
-    );
+fn test_exec_command_allows_missing_what_and_why_arguments() -> anyhow::Result<()> {
+    let args_without_what: ExecCommandArgs =
+        parse_arguments(r#"{"cmd":"echo hello","why":"verify shell behavior"}"#)?;
+    assert_eq!(args_without_what.what, None);
 
-    let json_missing_why = r#"{"cmd":"echo hello","what":"print greeting text"}"#;
-    let err_missing_why = parse_arguments::<ExecCommandArgs>(json_missing_why)
-        .expect_err("missing why should fail argument parsing");
-    assert!(err_missing_why.to_string().contains("missing field `why`"));
+    let args_without_why: ExecCommandArgs =
+        parse_arguments(r#"{"cmd":"echo hello","what":"print greeting text"}"#)?;
+    assert_eq!(args_without_why.why, None);
+
+    let args_without_purpose: ExecCommandArgs = parse_arguments(r#"{"cmd":"echo hello"}"#)?;
+    assert_eq!(args_without_purpose.what, None);
+    assert_eq!(args_without_purpose.why, None);
+
+    Ok(())
 }
 
 #[test]
 fn test_exec_command_rejects_blank_what_and_why() {
     assert!(
-        validate_command_purpose("exec_command", "run test command", "verify behavior").is_ok()
+        validate_command_purpose(
+            "exec_command",
+            true,
+            Some("run test command"),
+            Some("verify behavior"),
+        )
+        .is_ok()
     );
 
-    let blank_what = validate_command_purpose("exec_command", "  ", "verify behavior")
-        .expect_err("blank what should be rejected");
+    let blank_what =
+        validate_command_purpose("exec_command", true, Some("  "), Some("verify behavior"))
+            .expect_err("blank what should be rejected");
     assert!(
         blank_what
             .to_string()
             .contains("requires non-empty `what` and `why`")
     );
 
-    let blank_why = validate_command_purpose("exec_command", "run test command", "  ")
-        .expect_err("blank why should be rejected");
+    let blank_why = validate_command_purpose(
+        "exec_command",
+        true,
+        Some("run test command"),
+        Some("  "),
+    )
+    .expect_err("blank why should be rejected");
     assert!(
         blank_why
             .to_string()
             .contains("requires non-empty `what` and `why`")
     );
+
+    assert!(validate_command_purpose("exec_command", false, None, None).is_ok());
 }
