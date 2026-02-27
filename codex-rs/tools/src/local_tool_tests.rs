@@ -10,6 +10,7 @@ fn windows_shell_safety_description() -> String {
 fn shell_tool_matches_expected_spec() {
     let tool = create_shell_tool(ShellToolOptions {
         exec_permission_approvals_enabled: false,
+        require_command_purpose: true,
     });
 
     let description = if cfg!(windows) {
@@ -116,6 +117,7 @@ fn exec_command_tool_matches_expected_spec() {
     let tool = create_exec_command_tool(CommandToolOptions {
         allow_login_shell: true,
         exec_permission_approvals_enabled: false,
+        require_command_purpose: true,
     });
 
     let description = if cfg!(windows) {
@@ -268,6 +270,7 @@ fn write_stdin_tool_matches_expected_spec() {
 fn shell_tool_with_request_permission_includes_additional_permissions() {
     let tool = create_shell_tool(ShellToolOptions {
         exec_permission_approvals_enabled: true,
+        require_command_purpose: false,
     });
 
     let mut properties = BTreeMap::from([
@@ -392,6 +395,7 @@ fn shell_command_tool_matches_expected_spec() {
     let tool = create_shell_command_tool(CommandToolOptions {
         allow_login_shell: true,
         exec_permission_approvals_enabled: false,
+        require_command_purpose: true,
     });
 
     let description = if cfg!(windows) {
@@ -479,4 +483,69 @@ Examples of valid command strings:
             output_schema: None,
         })
     );
+}
+
+#[test]
+fn exec_command_tool_does_not_require_what_why_when_disabled() {
+    let tool = create_exec_command_tool(CommandToolOptions {
+        allow_login_shell: true,
+        exec_permission_approvals_enabled: false,
+        require_command_purpose: false,
+    });
+    let ToolSpec::Function(ResponsesApiTool {
+        parameters:
+            JsonSchema::Object {
+                required: Some(required),
+                ..
+            },
+        ..
+    }) = &tool
+    else {
+        panic!("expected function tool");
+    };
+
+    assert_eq!(required, &vec!["cmd".to_string()]);
+}
+
+#[test]
+fn shell_tool_does_not_require_what_why_when_disabled() {
+    let tool = create_shell_tool(ShellToolOptions {
+        exec_permission_approvals_enabled: false,
+        require_command_purpose: false,
+    });
+    let ToolSpec::Function(ResponsesApiTool {
+        parameters:
+            JsonSchema::Object {
+                required: Some(required),
+                ..
+            },
+        ..
+    }) = &tool
+    else {
+        panic!("expected function tool");
+    };
+
+    assert_eq!(required, &vec!["command".to_string()]);
+}
+
+#[test]
+fn shell_command_tool_does_not_require_what_why_when_disabled() {
+    let tool = create_shell_command_tool(CommandToolOptions {
+        allow_login_shell: true,
+        exec_permission_approvals_enabled: false,
+        require_command_purpose: false,
+    });
+    let ToolSpec::Function(ResponsesApiTool {
+        parameters:
+            JsonSchema::Object {
+                required: Some(required),
+                ..
+            },
+        ..
+    }) = &tool
+    else {
+        panic!("expected function tool");
+    };
+
+    assert_eq!(required, &vec!["command".to_string()]);
 }

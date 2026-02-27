@@ -101,6 +101,11 @@ pub struct ConfigToml {
     /// shell.
     pub allow_login_shell: Option<bool>,
 
+    /// Whether shell tools require non-empty `what` and `why` fields.
+    ///
+    /// Defaults to `true`.
+    pub shnote: Option<bool>,
+
     /// Sandbox mode to use.
     pub sandbox_mode: Option<SandboxMode>,
 

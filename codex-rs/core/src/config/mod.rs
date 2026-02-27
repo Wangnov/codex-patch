@@ -254,6 +254,11 @@ pub struct Config {
     /// ARC.
     pub approvals_reviewer: ApprovalsReviewer,
 
+    /// Whether shell tools require non-empty `what` and `why` fields.
+    ///
+    /// Defaults to `true`.
+    pub shnote: bool,
+
     /// enforce_residency means web traffic cannot be routed outside of a
     /// particular geography. HTTP clients should direct their requests
     /// using backend-specific headers or URLs to enforce this.
@@ -1739,6 +1744,7 @@ impl Config {
 
         let shell_environment_policy = cfg.shell_environment_policy.into();
         let allow_login_shell = cfg.allow_login_shell.unwrap_or(true);
+        let shnote = cfg.shnote.unwrap_or(true);
 
         let history = cfg.history.unwrap_or_default();
 
@@ -2032,6 +2038,7 @@ impl Config {
                 windows_sandbox_private_desktop,
             },
             approvals_reviewer: constrained_approvals_reviewer.value(),
+            shnote,
             enforce_residency: enforce_residency.value,
             notify: cfg.notify,
             user_instructions,

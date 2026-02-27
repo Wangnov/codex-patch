@@ -50,6 +50,12 @@ Codex can run a notification hook when the agent finishes a turn. See the config
 
 When Codex knows which client started the turn, the legacy notify JSON payload also includes a top-level `client` field. The TUI reports `codex-tui`, and the app server reports the `clientInfo.name` value from `initialize`.
 
+## shnote
+
+Set `shnote = false` in `~/.codex/config.toml` to disable `what`/`why` requirements for
+shell-style tools (`shell`, `shell_command`, and `exec_command`).
+The default is `true`, which keeps `what` and `why` required and non-empty.
+
 ## JSON Schema
 
 The generated JSON Schema for `config.toml` lives at `codex-rs/core/config.schema.json`.
