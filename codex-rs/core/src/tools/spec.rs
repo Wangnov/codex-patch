@@ -149,6 +149,7 @@ pub(crate) struct ToolsConfig {
     shell_command_backend: ShellCommandBackendConfig,
     pub unified_exec_shell_mode: UnifiedExecShellMode,
     pub allow_login_shell: bool,
+    pub require_command_purpose: bool,
     pub apply_patch_tool_type: Option<ApplyPatchToolType>,
     pub web_search_mode: Option<WebSearchMode>,
     pub web_search_config: Option<WebSearchConfig>,
@@ -283,6 +284,7 @@ impl ToolsConfig {
             shell_command_backend,
             unified_exec_shell_mode: UnifiedExecShellMode::Direct,
             allow_login_shell: true,
+            require_command_purpose: true,
             apply_patch_tool_type,
             web_search_mode: *web_search_mode,
             web_search_config: None,
@@ -315,6 +317,11 @@ impl ToolsConfig {
 
     pub fn with_allow_login_shell(mut self, allow_login_shell: bool) -> Self {
         self.allow_login_shell = allow_login_shell;
+        self
+    }
+
+    pub fn with_require_command_purpose(mut self, require_command_purpose: bool) -> Self {
+        self.require_command_purpose = require_command_purpose;
         self
     }
 
@@ -499,6 +506,7 @@ pub(crate) fn build_specs_with_discoverable_tools(
                 &mut builder,
                 create_shell_tool(ShellToolOptions {
                     exec_permission_approvals_enabled,
+                    require_command_purpose: config.require_command_purpose,
                 }),
                 /*supports_parallel_tool_calls*/ true,
                 config.code_mode_enabled,
@@ -518,6 +526,7 @@ pub(crate) fn build_specs_with_discoverable_tools(
                 create_exec_command_tool(CommandToolOptions {
                     allow_login_shell: config.allow_login_shell,
                     exec_permission_approvals_enabled,
+                    require_command_purpose: config.require_command_purpose,
                 }),
                 /*supports_parallel_tool_calls*/ true,
                 config.code_mode_enabled,
@@ -540,6 +549,7 @@ pub(crate) fn build_specs_with_discoverable_tools(
                 create_shell_command_tool(CommandToolOptions {
                     allow_login_shell: config.allow_login_shell,
                     exec_permission_approvals_enabled,
+                    require_command_purpose: config.require_command_purpose,
                 }),
                 /*supports_parallel_tool_calls*/ true,
                 config.code_mode_enabled,

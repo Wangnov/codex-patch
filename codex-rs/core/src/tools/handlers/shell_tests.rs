@@ -292,9 +292,11 @@ fn build_post_tool_use_payload_uses_tool_output_wire_value() {
 
 #[test]
 fn command_purpose_requires_non_empty_what_and_why() {
-    assert!(validate_command_purpose("shell", Some("list files"), Some("inspect repo")).is_ok());
+    assert!(
+        validate_command_purpose("shell", true, Some("list files"), Some("inspect repo")).is_ok()
+    );
 
-    let missing_what = validate_command_purpose("shell", None, Some("inspect repo"))
+    let missing_what = validate_command_purpose("shell", true, None, Some("inspect repo"))
         .expect_err("missing what should be rejected");
     assert!(
         missing_what
@@ -302,11 +304,13 @@ fn command_purpose_requires_non_empty_what_and_why() {
             .contains("requires non-empty `what` and `why`")
     );
 
-    let blank_why = validate_command_purpose("shell", Some("list files"), Some("  "))
+    let blank_why = validate_command_purpose("shell", true, Some("list files"), Some("  "))
         .expect_err("blank why should be rejected");
     assert!(
         blank_why
             .to_string()
             .contains("requires non-empty `what` and `why`")
     );
+
+    assert!(validate_command_purpose("shell", false, None, None).is_ok());
 }
