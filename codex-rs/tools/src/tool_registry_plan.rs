@@ -113,6 +113,7 @@ pub fn build_tool_registry_plan(
                 plan.push_spec(
                     create_shell_tool(ShellToolOptions {
                         exec_permission_approvals_enabled,
+                        require_command_purpose: config.require_command_purpose,
                     }),
                     /*supports_parallel_tool_calls*/ true,
                     config.code_mode_enabled,
@@ -130,6 +131,7 @@ pub fn build_tool_registry_plan(
                     create_exec_command_tool(CommandToolOptions {
                         allow_login_shell: config.allow_login_shell,
                         exec_permission_approvals_enabled,
+                        require_command_purpose: config.require_command_purpose,
                     }),
                     /*supports_parallel_tool_calls*/ true,
                     config.code_mode_enabled,
@@ -148,6 +150,7 @@ pub fn build_tool_registry_plan(
                     create_shell_command_tool(CommandToolOptions {
                         allow_login_shell: config.allow_login_shell,
                         exec_permission_approvals_enabled,
+                        require_command_purpose: config.require_command_purpose,
                     }),
                     /*supports_parallel_tool_calls*/ true,
                     config.code_mode_enabled,

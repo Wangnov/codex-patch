@@ -88,6 +88,7 @@ pub struct ToolsConfig {
     pub unified_exec_shell_mode: UnifiedExecShellMode,
     pub has_environment: bool,
     pub allow_login_shell: bool,
+    pub require_command_purpose: bool,
     pub apply_patch_tool_type: Option<ApplyPatchToolType>,
     pub web_search_mode: Option<WebSearchMode>,
     pub web_search_config: Option<WebSearchConfig>,
@@ -203,6 +204,7 @@ impl ToolsConfig {
             unified_exec_shell_mode: UnifiedExecShellMode::Direct,
             has_environment: true,
             allow_login_shell: true,
+            require_command_purpose: true,
             apply_patch_tool_type,
             web_search_mode: *web_search_mode,
             web_search_config: None,
@@ -235,6 +237,11 @@ impl ToolsConfig {
 
     pub fn with_allow_login_shell(mut self, allow_login_shell: bool) -> Self {
         self.allow_login_shell = allow_login_shell;
+        self
+    }
+
+    pub fn with_require_command_purpose(mut self, require_command_purpose: bool) -> Self {
+        self.require_command_purpose = require_command_purpose;
         self
     }
 

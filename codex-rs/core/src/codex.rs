@@ -971,6 +971,7 @@ impl TurnContext {
         .with_unified_exec_shell_mode(self.tools_config.unified_exec_shell_mode.clone())
         .with_web_search_config(self.tools_config.web_search_config.clone())
         .with_allow_login_shell(self.tools_config.allow_login_shell)
+        .with_require_command_purpose(self.tools_config.require_command_purpose)
         .with_has_environment(self.tools_config.has_environment)
         .with_agent_type_description(crate::agent::role::spawn_tool_spec::build(
             &config.agent_roles,
@@ -1453,6 +1454,7 @@ impl Session {
         )
         .with_web_search_config(per_turn_config.web_search_config.clone())
         .with_allow_login_shell(per_turn_config.permissions.allow_login_shell)
+        .with_require_command_purpose(per_turn_config.shnote)
         .with_has_environment(environment.is_some())
         .with_agent_type_description(crate::agent::role::spawn_tool_spec::build(
             &per_turn_config.agent_roles,
@@ -5643,6 +5645,7 @@ async fn spawn_review_thread(
     )
     .with_web_search_config(/*web_search_config*/ None)
     .with_allow_login_shell(config.permissions.allow_login_shell)
+    .with_require_command_purpose(config.shnote)
     .with_has_environment(parent_turn_context.environment.is_some())
     .with_agent_type_description(crate::agent::role::spawn_tool_spec::build(
         &config.agent_roles,

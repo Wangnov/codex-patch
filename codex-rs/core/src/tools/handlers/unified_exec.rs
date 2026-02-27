@@ -39,8 +39,8 @@ pub struct UnifiedExecHandler;
 #[derive(Debug, Deserialize)]
 pub(crate) struct ExecCommandArgs {
     cmd: String,
-    what: String,
-    why: String,
+    what: Option<String>,
+    why: Option<String>,
     #[serde(default)]
     pub(crate) workdir: Option<String>,
     #[serde(default)]
@@ -87,16 +87,18 @@ fn default_tty() -> bool {
     false
 }
 
-fn has_non_empty_command_purpose(what: &str, why: &str) -> bool {
-    !what.trim().is_empty() && !why.trim().is_empty()
+fn has_non_empty_command_purpose(what: Option<&str>, why: Option<&str>) -> bool {
+    what.is_some_and(|value| !value.trim().is_empty())
+        && why.is_some_and(|value| !value.trim().is_empty())
 }
 
 fn validate_command_purpose(
     tool_name: &str,
-    what: &str,
-    why: &str,
+    require_command_purpose: bool,
+    what: Option<&str>,
+    why: Option<&str>,
 ) -> Result<(), FunctionCallError> {
-    if has_non_empty_command_purpose(what, why) {
+    if !require_command_purpose || has_non_empty_command_purpose(what, why) {
         Ok(())
     } else {
         Err(FunctionCallError::RespondToModel(format!(
@@ -129,7 +131,9 @@ impl ToolHandler for UnifiedExecHandler {
         let Ok(params) = parse_arguments::<ExecCommandArgs>(arguments) else {
             return true;
         };
-        if !has_non_empty_command_purpose(&params.what, &params.why) {
+        if invocation.turn.tools_config.require_command_purpose
+            && !has_non_empty_command_purpose(params.what.as_deref(), params.why.as_deref())
+        {
             return true;
         }
         let command = match get_command(
@@ -209,7 +213,12 @@ impl ToolHandler for UnifiedExecHandler {
                 let args: ExecCommandArgs =
                     parse_arguments_with_base_path(&arguments, cwd.as_path())?;
                 let workdir = context.turn.resolve_path(args.workdir.clone());
-                validate_command_purpose(tool_name.as_str(), &args.what, &args.why)?;
+                validate_command_purpose(
+                    tool_name.as_str(),
+                    turn.tools_config.require_command_purpose,
+                    args.what.as_deref(),
+                    args.why.as_deref(),
+                )?;
                 maybe_emit_implicit_skill_invocation(
                     session.as_ref(),
                     context.turn.as_ref(),
@@ -345,8 +354,8 @@ impl ToolHandler for UnifiedExecHandler {
                                 .permissions_preapproved,
                             justification,
                             prefix_rule,
-                            what: Some(what),
-                            why: Some(why),
+                            what,
+                            why,
                         },
                         &context,
                     )
@@ -436,5 +445,181 @@ pub(crate) fn get_command(
 }
 
 #[cfg(test)]
-#[path = "unified_exec_tests.rs"]
-mod tests;
+mod tests {
+    use super::*;
+    use crate::shell::default_user_shell;
+    use crate::tools::handlers::parse_arguments_with_base_path;
+    use crate::tools::handlers::resolve_workdir_base_path;
+    use codex_protocol::models::FileSystemPermissions;
+    use codex_protocol::models::PermissionProfile;
+    use codex_utils_absolute_path::AbsolutePathBuf;
+    use pretty_assertions::assert_eq;
+    use std::fs;
+    use std::sync::Arc;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_get_command_uses_default_shell_when_unspecified() -> anyhow::Result<()> {
+        let json = r#"{"cmd":"echo hello","what":"print greeting text","why":"verify default shell behavior"}"#;
+
+        let args: ExecCommandArgs = parse_arguments(json)?;
+
+        assert!(args.shell.is_none());
+
+        let command =
+            get_command(&args, Arc::new(default_user_shell()), true).map_err(anyhow::Error::msg)?;
+
+        assert_eq!(command.len(), 3);
+        assert_eq!(command[2], "echo hello");
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_command_respects_explicit_bash_shell() -> anyhow::Result<()> {
+        let json = r#"{"cmd":"echo hello","what":"print greeting text","why":"verify explicit bash shell behavior","shell":"/bin/bash"}"#;
+
+        let args: ExecCommandArgs = parse_arguments(json)?;
+
+        assert_eq!(args.shell.as_deref(), Some("/bin/bash"));
+
+        let command =
+            get_command(&args, Arc::new(default_user_shell()), true).map_err(anyhow::Error::msg)?;
+
+        assert_eq!(command.last(), Some(&"echo hello".to_string()));
+        if command
+            .iter()
+            .any(|arg| arg.eq_ignore_ascii_case("-Command"))
+        {
+            assert!(command.contains(&"-NoProfile".to_string()));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_command_respects_explicit_powershell_shell() -> anyhow::Result<()> {
+        let json = r#"{"cmd":"echo hello","what":"print greeting text","why":"verify explicit powershell shell behavior","shell":"powershell"}"#;
+
+        let args: ExecCommandArgs = parse_arguments(json)?;
+
+        assert_eq!(args.shell.as_deref(), Some("powershell"));
+
+        let command =
+            get_command(&args, Arc::new(default_user_shell()), true).map_err(anyhow::Error::msg)?;
+
+        assert_eq!(command[2], "echo hello");
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_command_respects_explicit_cmd_shell() -> anyhow::Result<()> {
+        let json = r#"{"cmd":"echo hello","what":"print greeting text","why":"verify explicit cmd shell behavior","shell":"cmd"}"#;
+
+        let args: ExecCommandArgs = parse_arguments(json)?;
+
+        assert_eq!(args.shell.as_deref(), Some("cmd"));
+
+        let command =
+            get_command(&args, Arc::new(default_user_shell()), true).map_err(anyhow::Error::msg)?;
+
+        assert_eq!(command[2], "echo hello");
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_command_rejects_explicit_login_when_disallowed() -> anyhow::Result<()> {
+        let json = r#"{"cmd":"echo hello","what":"print greeting text","why":"verify disallowed login shell behavior","login":true}"#;
+
+        let args: ExecCommandArgs = parse_arguments(json)?;
+        let err = get_command(&args, Arc::new(default_user_shell()), false)
+            .expect_err("explicit login should be rejected");
+
+        assert!(
+            err.contains("login shell is disabled by config"),
+            "unexpected error: {err}"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn exec_command_args_resolve_relative_additional_permissions_against_workdir()
+    -> anyhow::Result<()> {
+        let cwd = tempdir()?;
+        let workdir = cwd.path().join("nested");
+        fs::create_dir_all(&workdir)?;
+        let expected_write = workdir.join("relative-write.txt");
+        let json = r#"{
+            "cmd": "echo hello",
+            "workdir": "nested",
+            "additional_permissions": {
+                "file_system": {
+                    "write": ["./relative-write.txt"]
+                }
+            }
+        }"#;
+
+        let base_path = resolve_workdir_base_path(json, cwd.path())?;
+        let args: ExecCommandArgs = parse_arguments_with_base_path(json, base_path.as_path())?;
+
+        assert_eq!(
+            args.additional_permissions,
+            Some(PermissionProfile {
+                file_system: Some(FileSystemPermissions {
+                    read: None,
+                    write: Some(vec![AbsolutePathBuf::try_from(expected_write)?]),
+                }),
+                ..Default::default()
+            })
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_exec_command_allows_missing_what_and_why_arguments() -> anyhow::Result<()> {
+        let args_without_what: ExecCommandArgs =
+            parse_arguments(r#"{"cmd":"echo hello","why":"verify shell behavior"}"#)?;
+        assert_eq!(args_without_what.what, None);
+
+        let args_without_why: ExecCommandArgs =
+            parse_arguments(r#"{"cmd":"echo hello","what":"print greeting text"}"#)?;
+        assert_eq!(args_without_why.why, None);
+
+        let args_without_purpose: ExecCommandArgs = parse_arguments(r#"{"cmd":"echo hello"}"#)?;
+        assert_eq!(args_without_purpose.what, None);
+        assert_eq!(args_without_purpose.why, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_exec_command_rejects_blank_what_and_why() {
+        assert!(
+            validate_command_purpose(
+                "exec_command",
+                true,
+                Some("run test command"),
+                Some("verify behavior"),
+            )
+            .is_ok()
+        );
+
+        let blank_what =
+            validate_command_purpose("exec_command", true, Some("  "), Some("verify behavior"))
+                .expect_err("blank what should be rejected");
+        assert!(
+            blank_what
+                .to_string()
+                .contains("requires non-empty `what` and `why`")
+        );
+
+        let blank_why =
+            validate_command_purpose("exec_command", true, Some("run test command"), Some("  "))
+                .expect_err("blank why should be rejected");
+        assert!(
+            blank_why
+                .to_string()
+                .contains("requires non-empty `what` and `why`")
+        );
+
+        assert!(validate_command_purpose("exec_command", false, None, None).is_ok());
+    }
+}
