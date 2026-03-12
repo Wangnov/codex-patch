@@ -216,6 +216,8 @@ impl UnifiedExecProcessManager {
                 request.tty,
                 network_approval_id,
                 Arc::clone(&transcript),
+                request.what.clone(),
+                request.why.clone(),
             )
             .await;
         }
@@ -306,6 +308,8 @@ impl UnifiedExecProcessManager {
                 text.clone(),
                 exit,
                 wall_time,
+                request.what.clone(),
+                request.why.clone(),
             )
             .await;
 
@@ -534,6 +538,8 @@ impl UnifiedExecProcessManager {
         tty: bool,
         network_approval_id: Option<String>,
         transcript: Arc<tokio::sync::Mutex<HeadTailBuffer>>,
+        what: Option<String>,
+        why: Option<String>,
     ) {
         let entry = ProcessEntry {
             process: Arc::clone(&process),
@@ -578,6 +584,8 @@ impl UnifiedExecProcessManager {
             process_id,
             transcript,
             started_at,
+            what,
+            why,
         );
     }
 
@@ -690,6 +698,8 @@ impl UnifiedExecProcessManager {
             #[cfg(unix)]
             additional_permissions_preapproved: request.additional_permissions_preapproved,
             justification: request.justification.clone(),
+            what: request.what.clone(),
+            why: request.why.clone(),
             exec_approval_requirement,
         };
         let tool_ctx = ToolCtx {
