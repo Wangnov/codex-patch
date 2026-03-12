@@ -62,6 +62,8 @@ pub struct UnifiedExecRequest {
     #[cfg(unix)]
     pub additional_permissions_preapproved: bool,
     pub justification: Option<String>,
+    pub what: Option<String>,
+    pub why: Option<String>,
     pub exec_approval_requirement: ExecApprovalRequirement,
 }
 
