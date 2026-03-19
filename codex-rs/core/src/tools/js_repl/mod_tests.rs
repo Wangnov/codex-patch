@@ -1031,22 +1031,26 @@ async fn js_repl_waits_for_unawaited_tool_calls_before_completion() -> anyhow::R
         .join(format!("js-repl-unawaited-marker-{}.txt", Uuid::new_v4()))?;
     let marker_json = serde_json::to_string(&marker.to_string_lossy().to_string())?;
     let result = manager
-            .execute(
-                session,
-                turn,
-                tracker,
-                JsReplArgs {
-                    code: format!(
-                        r#"
+        .execute(
+            session,
+            turn,
+            tracker,
+            JsReplArgs {
+                code: format!(
+                    r#"
 const marker = {marker_json};
-void codex.tool("shell_command", {{ command: `sleep 0.35; printf js_repl_unawaited_done > "${{marker}}"` }});
+void codex.tool("shell_command", {{
+  command: `sleep 0.35; printf js_repl_unawaited_done > "${{marker}}"`,
+  what: "write unawaited marker",
+  why: "verify js_repl waits for pending shell_command calls"
+}});
 console.log("cell-complete");
 "#
-                    ),
-                    timeout_ms: Some(10_000),
-                },
-            )
-            .await?;
+                ),
+                timeout_ms: Some(10_000),
+            },
+        )
+        .await?;
     assert!(result.output.contains("cell-complete"));
     let marker_contents = tokio::fs::read_to_string(&marker).await?;
     assert_eq!(marker_contents, "js_repl_unawaited_done");
@@ -1092,10 +1096,18 @@ const globalMarker = {global_marker_json};
 const lexicalMarker = {lexical_marker_json};
 const savedTool = codex.tool;
 globalThis.globalToolHelper = {{
-  run: () => savedTool("shell_command", {{ command: `printf global_helper > "${{globalMarker}}"` }}),
+  run: () => savedTool("shell_command", {{
+    command: `printf global_helper > "${{globalMarker}}"`,
+    what: "write global helper marker",
+    why: "verify persisted js_repl tool helpers keep working across cells"
+  }}),
 }};
 const lexicalToolHelper = {{
-  run: () => savedTool("shell_command", {{ command: `printf lexical_helper > "${{lexicalMarker}}"` }}),
+  run: () => savedTool("shell_command", {{
+    command: `printf lexical_helper > "${{lexicalMarker}}"`,
+    what: "write lexical helper marker",
+    why: "verify persisted js_repl tool helpers keep working across cells"
+  }}),
 }};
 "#
                 ),
