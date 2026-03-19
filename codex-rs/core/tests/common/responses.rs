@@ -766,7 +766,47 @@ pub fn ev_image_generation_call(
     })
 }
 
+fn command_purpose_defaults(tool_name: &str) -> Option<(&'static str, &'static str)> {
+    match tool_name {
+        "shell" => Some((
+            "run test shell command",
+            "exercise shell tool behavior in integration tests",
+        )),
+        "shell_command" => Some((
+            "run test shell command",
+            "exercise shell_command behavior in integration tests",
+        )),
+        "exec_command" => Some((
+            "run test exec command",
+            "exercise exec_command behavior in integration tests",
+        )),
+        _ => None,
+    }
+}
+
+fn add_default_command_purpose_if_missing(tool_name: &str, arguments: &str) -> String {
+    let Some((what, why)) = command_purpose_defaults(tool_name) else {
+        return arguments.to_string();
+    };
+    let Ok(mut arguments_json) = serde_json::from_str::<Value>(arguments) else {
+        return arguments.to_string();
+    };
+    let Some(arguments_obj) = arguments_json.as_object_mut() else {
+        return arguments.to_string();
+    };
+
+    arguments_obj
+        .entry("what")
+        .or_insert_with(|| Value::String(what.to_string()));
+    arguments_obj
+        .entry("why")
+        .or_insert_with(|| Value::String(why.to_string()));
+
+    serde_json::to_string(&arguments_json).unwrap_or_else(|_| arguments.to_string())
+}
+
 pub fn ev_function_call(call_id: &str, name: &str, arguments: &str) -> Value {
+    let arguments = add_default_command_purpose_if_missing(name, arguments);
     serde_json::json!({
         "type": "response.output_item.done",
         "item": {
