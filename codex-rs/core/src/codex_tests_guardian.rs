@@ -148,6 +148,8 @@ async fn guardian_allows_shell_additional_permissions_requests_past_policy_valid
             payload: ToolPayload::Function {
                 arguments: serde_json::json!({
                     "command": params.command.clone(),
+                    "what": "print greeting text",
+                    "why": "verify guardian shell additional permissions flow",
                     "workdir": Some(turn_context.cwd.to_string_lossy().to_string()),
                     "timeout_ms": params.expiration.timeout_ms(),
                     "sandbox_permissions": params.sandbox_permissions,
@@ -214,6 +216,8 @@ async fn guardian_allows_unified_exec_additional_permissions_requests_past_polic
             payload: ToolPayload::Function {
                 arguments: serde_json::json!({
                     "cmd": "echo hi",
+                    "what": "print greeting text",
+                    "why": "verify guardian unified exec additional permissions validation",
                     "sandbox_permissions": SandboxPermissions::WithAdditionalPermissions,
                     "justification": "need additional sandbox permissions",
                 })

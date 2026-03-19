@@ -23,8 +23,7 @@ use tokio::sync::Mutex;
 
 #[test]
 fn test_get_command_uses_default_shell_when_unspecified() -> anyhow::Result<()> {
-    let json =
-        r#"{"cmd":"echo hello","what":"print greeting text","why":"verify default shell behavior"}"#;
+    let json = r#"{"cmd":"echo hello","what":"print greeting text","why":"verify default shell behavior"}"#;
 
     let args: ExecCommandArgs = parse_arguments(json)?;
 
@@ -367,13 +366,9 @@ fn test_exec_command_rejects_blank_what_and_why() {
             .contains("requires non-empty `what` and `why`")
     );
 
-    let blank_why = validate_command_purpose(
-        "exec_command",
-        true,
-        Some("run test command"),
-        Some("  "),
-    )
-    .expect_err("blank why should be rejected");
+    let blank_why =
+        validate_command_purpose("exec_command", true, Some("run test command"), Some("  "))
+            .expect_err("blank why should be rejected");
     assert!(
         blank_why
             .to_string()
