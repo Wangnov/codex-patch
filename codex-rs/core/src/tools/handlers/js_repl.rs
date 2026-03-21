@@ -22,6 +22,7 @@ use crate::tools::registry::ToolHandler;
 use crate::tools::registry::ToolKind;
 use codex_features::Feature;
 use codex_protocol::models::FunctionCallOutputContentItem;
+use serde::Deserialize;
 
 pub struct JsReplHandler;
 pub struct JsReplResetHandler;
@@ -58,14 +59,16 @@ async fn emit_js_repl_exec_begin(
     session: &crate::codex::Session,
     turn: &crate::codex::TurnContext,
     call_id: &str,
+    what: Option<&str>,
+    why: Option<&str>,
 ) {
     let emitter = ToolEmitter::shell(
         vec!["js_repl".to_string()],
         turn.cwd.to_path_buf(),
         ExecCommandSource::Agent,
         /*freeform*/ false,
-        None,
-        None,
+        what.map(str::to_owned),
+        why.map(str::to_owned),
     );
     let ctx = ToolEventCtx::new(session, turn, call_id, /*turn_diff_tracker*/ None);
     emitter.emit(ctx, ToolEventStage::Begin).await;
@@ -75,6 +78,8 @@ async fn emit_js_repl_exec_end(
     session: &crate::codex::Session,
     turn: &crate::codex::TurnContext,
     call_id: &str,
+    what: Option<&str>,
+    why: Option<&str>,
     output: &str,
     error: Option<&str>,
     duration: Duration,
@@ -85,8 +90,8 @@ async fn emit_js_repl_exec_end(
         turn.cwd.to_path_buf(),
         ExecCommandSource::Agent,
         /*freeform*/ false,
-        None,
-        None,
+        what.map(str::to_owned),
+        why.map(str::to_owned),
     );
     let ctx = ToolEventCtx::new(session, turn, call_id, /*turn_diff_tracker*/ None);
     let stage = if error.is_some() {
@@ -138,7 +143,16 @@ impl ToolHandler for JsReplHandler {
         };
         let manager = turn.js_repl.manager().await?;
         let started_at = Instant::now();
-        emit_js_repl_exec_begin(session.as_ref(), turn.as_ref(), &call_id).await;
+        let what = args.what.clone();
+        let why = args.why.clone();
+        emit_js_repl_exec_begin(
+            session.as_ref(),
+            turn.as_ref(),
+            &call_id,
+            what.as_deref(),
+            why.as_deref(),
+        )
+        .await;
         let result = manager
             .execute(Arc::clone(&session), Arc::clone(&turn), tracker, args)
             .await;
@@ -150,6 +164,8 @@ impl ToolHandler for JsReplHandler {
                     session.as_ref(),
                     turn.as_ref(),
                     &call_id,
+                    what.as_deref(),
+                    why.as_deref(),
                     "",
                     Some(&message),
                     started_at.elapsed(),
@@ -172,6 +188,8 @@ impl ToolHandler for JsReplHandler {
             session.as_ref(),
             turn.as_ref(),
             &call_id,
+            what.as_deref(),
+            why.as_deref(),
             &content,
             /*error*/ None,
             started_at.elapsed(),
@@ -220,6 +238,8 @@ fn parse_freeform_args(input: &str) -> Result<JsReplArgs, FunctionCallError> {
     let mut args = JsReplArgs {
         code: input.to_string(),
         timeout_ms: None,
+        what: None,
+        why: None,
     };
 
     let mut lines = input.splitn(2, '\n');
@@ -231,36 +251,16 @@ fn parse_freeform_args(input: &str) -> Result<JsReplArgs, FunctionCallError> {
         return Ok(args);
     };
 
-    let mut timeout_ms: Option<u64> = None;
     let directive = pragma.trim();
     if !directive.is_empty() {
-        for token in directive.split_whitespace() {
-            let (key, value) = token.split_once('=').ok_or_else(|| {
-                FunctionCallError::RespondToModel(format!(
-                    "js_repl pragma expects space-separated key=value pairs (supported keys: timeout_ms); got `{token}`"
-                ))
-            })?;
-            match key {
-                "timeout_ms" => {
-                    if timeout_ms.is_some() {
-                        return Err(FunctionCallError::RespondToModel(
-                            "js_repl pragma specifies timeout_ms more than once".to_string(),
-                        ));
-                    }
-                    let parsed = value.parse::<u64>().map_err(|_| {
-                        FunctionCallError::RespondToModel(format!(
-                            "js_repl pragma timeout_ms must be an integer; got `{value}`"
-                        ))
-                    })?;
-                    timeout_ms = Some(parsed);
-                }
-                _ => {
-                    return Err(FunctionCallError::RespondToModel(format!(
-                        "js_repl pragma only supports timeout_ms; got `{key}`"
-                    )));
-                }
-            }
-        }
+        let pragma = if directive.starts_with('{') {
+            parse_json_pragma(directive)?
+        } else {
+            parse_legacy_pragma(directive)?
+        };
+        args.timeout_ms = pragma.timeout_ms;
+        args.what = pragma.what;
+        args.why = pragma.why;
     }
 
     if rest.trim().is_empty() {
@@ -271,8 +271,64 @@ fn parse_freeform_args(input: &str) -> Result<JsReplArgs, FunctionCallError> {
 
     reject_json_or_quoted_source(rest)?;
     args.code = rest.to_string();
-    args.timeout_ms = timeout_ms;
     Ok(args)
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct JsReplPragma {
+    timeout_ms: Option<u64>,
+    what: Option<String>,
+    why: Option<String>,
+}
+
+fn parse_json_pragma(directive: &str) -> Result<JsReplPragma, FunctionCallError> {
+    let value = serde_json::from_str(directive).map_err(|err| {
+        FunctionCallError::RespondToModel(format!(
+            "js_repl pragma must be valid JSON with supported fields `timeout_ms`, `what`, and `why`: {err}"
+        ))
+    })?;
+    serde_json::from_value(value).map_err(|err| {
+        FunctionCallError::RespondToModel(format!(
+            "js_repl pragma fields `timeout_ms`, `what`, and `why` must be valid: {err}"
+        ))
+    })
+}
+
+fn parse_legacy_pragma(directive: &str) -> Result<JsReplPragma, FunctionCallError> {
+    let mut timeout_ms: Option<u64> = None;
+    for token in directive.split_whitespace() {
+        let (key, value) = token.split_once('=').ok_or_else(|| {
+            FunctionCallError::RespondToModel(format!(
+                "js_repl pragma expects space-separated key=value pairs (supported keys: timeout_ms); got `{token}`"
+            ))
+        })?;
+        match key {
+            "timeout_ms" => {
+                if timeout_ms.is_some() {
+                    return Err(FunctionCallError::RespondToModel(
+                        "js_repl pragma specifies timeout_ms more than once".to_string(),
+                    ));
+                }
+                let parsed = value.parse::<u64>().map_err(|_| {
+                    FunctionCallError::RespondToModel(format!(
+                        "js_repl pragma timeout_ms must be an integer; got `{value}`"
+                    ))
+                })?;
+                timeout_ms = Some(parsed);
+            }
+            _ => {
+                return Err(FunctionCallError::RespondToModel(format!(
+                    "js_repl pragma only supports timeout_ms; got `{key}`"
+                )));
+            }
+        }
+    }
+    Ok(JsReplPragma {
+        timeout_ms,
+        what: None,
+        why: None,
+    })
 }
 
 fn reject_json_or_quoted_source(code: &str) -> Result<(), FunctionCallError> {

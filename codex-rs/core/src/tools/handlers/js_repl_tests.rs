@@ -19,6 +19,24 @@ fn parse_freeform_args_with_pragma() {
     let args = parse_freeform_args(input).expect("parse args");
     assert_eq!(args.code, "console.log('ok');");
     assert_eq!(args.timeout_ms, Some(15_000));
+    assert_eq!(args.what, None);
+    assert_eq!(args.why, None);
+}
+
+#[test]
+fn parse_freeform_args_with_json_pragma_metadata() {
+    let input = concat!(
+        "// codex-js-repl: {\"timeout_ms\":15000,\"what\":\"inspect DOM state\",\"why\":\"verify page structure before continuing\"}\n",
+        "console.log('ok');"
+    );
+    let args = parse_freeform_args(input).expect("parse args");
+    assert_eq!(args.code, "console.log('ok');");
+    assert_eq!(args.timeout_ms, Some(15_000));
+    assert_eq!(args.what.as_deref(), Some("inspect DOM state"));
+    assert_eq!(
+        args.why.as_deref(),
+        Some("verify page structure before continuing")
+    );
 }
 
 #[test]
@@ -57,6 +75,8 @@ async fn emit_js_repl_exec_end_sends_event() {
         session.as_ref(),
         turn.as_ref(),
         "call-1",
+        Some("inspect DOM state"),
+        Some("verify page structure before continuing"),
         "hello",
         /*error*/ None,
         Duration::from_millis(12),
@@ -79,6 +99,11 @@ async fn emit_js_repl_exec_end_sends_event() {
     assert_eq!(event.command, vec!["js_repl".to_string()]);
     assert_eq!(event.cwd, turn.cwd.to_path_buf());
     assert_eq!(event.source, ExecCommandSource::Agent);
+    assert_eq!(event.what.as_deref(), Some("inspect DOM state"));
+    assert_eq!(
+        event.why.as_deref(),
+        Some("verify page structure before continuing")
+    );
     assert_eq!(event.interaction_input, None);
     assert_eq!(event.stdout, "hello");
     assert_eq!(event.stderr, "");
