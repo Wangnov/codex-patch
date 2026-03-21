@@ -151,8 +151,8 @@ struct PickerPage {
 /// new sessions appear during pagination.
 ///
 /// Filtering happens in two layers:
-/// 1. Provider and source filtering at the backend (only interactive CLI sessions
-///    for the current model provider).
+/// 1. Source filtering at the backend (interactive CLI sessions across providers
+///    by default, optionally including non-interactive sessions).
 /// 2. Working-directory filtering at the picker (unless `--all` is passed).
 #[allow(dead_code)]
 pub async fn run_resume_picker(
@@ -246,11 +246,7 @@ async fn run_session_picker_with_loader(
     bg_rx: mpsc::UnboundedReceiver<BackgroundEvent>,
 ) -> Result<SessionSelection> {
     let alt = AltScreenGuard::enter(tui);
-    let provider_filter = if is_remote {
-        ProviderFilter::Any
-    } else {
-        ProviderFilter::MatchDefault(config.model_provider_id.to_string())
-    };
+    let provider_filter = ProviderFilter::Any;
     let codex_home = config.codex_home.as_path();
     let filter_cwd = if show_all || is_remote {
         // Remote sessions live in the server's filesystem namespace, so the client
@@ -317,13 +313,17 @@ fn spawn_rollout_page_loader(
 ) -> PageLoader {
     let config = config.clone();
     let loader_tx = bg_tx;
+    let fallback_provider = config.model_provider_id.to_string();
     Arc::new(move |request: PageLoadRequest| {
         let tx = loader_tx.clone();
         let config = config.clone();
+        let fallback_provider = fallback_provider.clone();
         tokio::spawn(async move {
-            let default_provider = match request.provider_filter {
+            let model_provider_filter = match &request.provider_filter {
                 ProviderFilter::Any => None,
-                ProviderFilter::MatchDefault(default_provider) => Some(default_provider),
+                ProviderFilter::MatchDefault(default_provider) => {
+                    Some(std::slice::from_ref(default_provider))
+                }
             };
             let cursor = match request.cursor.as_ref() {
                 Some(PageCursor::Rollout(cursor)) => Some(cursor),
@@ -336,8 +336,8 @@ fn spawn_rollout_page_loader(
                 cursor,
                 request.sort_key,
                 INTERACTIVE_SESSION_SOURCES.as_slice(),
-                default_provider.as_ref().map(std::slice::from_ref),
-                default_provider.as_deref().unwrap_or_default(),
+                model_provider_filter,
+                fallback_provider.as_str(),
                 /*search_term*/ None,
             )
             .await
@@ -2500,6 +2500,31 @@ mod tests {
                 show_cwd: false,
             }
         );
+    }
+
+    #[test]
+    fn start_initial_load_requests_all_providers() {
+        let recorded_requests: Arc<Mutex<Vec<PageLoadRequest>>> = Arc::new(Mutex::new(Vec::new()));
+        let request_sink = recorded_requests.clone();
+        let loader: PageLoader = Arc::new(move |req: PageLoadRequest| {
+            request_sink.lock().unwrap().push(req);
+        });
+
+        let mut state = PickerState::new(
+            PathBuf::from("/tmp"),
+            FrameRequester::test_dummy(),
+            loader,
+            ProviderFilter::Any,
+            /*show_all*/ true,
+            /*filter_cwd*/ None,
+            SessionPickerAction::Resume,
+        );
+
+        state.start_initial_load();
+
+        let guard = recorded_requests.lock().unwrap();
+        assert_eq!(guard.len(), 1);
+        assert!(matches!(guard[0].provider_filter, ProviderFilter::Any));
     }
 
     #[tokio::test]
