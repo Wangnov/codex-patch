@@ -4427,8 +4427,8 @@ impl ChatWidget {
                     parsed,
                     source,
                     ev.interaction_input.clone(),
-                    what.clone(),
-                    why.clone(),
+                    what,
+                    why,
                     self.config.animations,
                 );
                 let completed = orphan.complete_call(&ev.call_id, output, ev.duration);

@@ -551,6 +551,8 @@ async fn js_repl_timeout_does_not_deadlock() -> anyhow::Result<()> {
             JsReplArgs {
                 code: "while (true) {}".to_string(),
                 timeout_ms: Some(50),
+                what: None,
+                why: None,
             },
         ),
     )
@@ -585,6 +587,8 @@ async fn js_repl_timeout_kills_kernel_process() -> anyhow::Result<()> {
             JsReplArgs {
                 code: "console.log('warmup');".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -603,6 +607,8 @@ async fn js_repl_timeout_kills_kernel_process() -> anyhow::Result<()> {
             JsReplArgs {
                 code: "while (true) {}".to_string(),
                 timeout_ms: Some(50),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -788,6 +794,8 @@ for (let i = 0; i < paths.length; i++) {{
                     JsReplArgs {
                         code,
                         timeout_ms: Some(15_000),
+                        what: None,
+                        why: None,
                     },
                 )
                 .await
@@ -840,6 +848,8 @@ for (let i = 0; i < paths.length; i++) {{
             JsReplArgs {
                 code: "console.log('after interrupt');".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -868,6 +878,8 @@ async fn js_repl_forced_kernel_exit_recovers_on_next_exec() -> anyhow::Result<()
             JsReplArgs {
                 code: "console.log('warmup');".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -903,6 +915,8 @@ async fn js_repl_forced_kernel_exit_recovers_on_next_exec() -> anyhow::Result<()
             JsReplArgs {
                 code: "console.log('after-kill');".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -930,6 +944,8 @@ async fn js_repl_uncaught_exception_returns_exec_error_and_recovers() -> anyhow:
             JsReplArgs {
                 code: "console.log('warmup');".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -949,6 +965,8 @@ async fn js_repl_uncaught_exception_returns_exec_error_and_recovers() -> anyhow:
                 JsReplArgs {
                     code: "setTimeout(() => { throw new Error('boom'); }, 0);\nawait new Promise(() => {});".to_string(),
                     timeout_ms: Some(10_000),
+                what: None,
+                why: None,
                 },
             ),
         )
@@ -1002,6 +1020,8 @@ async fn js_repl_uncaught_exception_returns_exec_error_and_recovers() -> anyhow:
             JsReplArgs {
                 code: "console.log('after reset');".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1048,6 +1068,8 @@ console.log("cell-complete");
 "#
                 ),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1112,6 +1134,8 @@ const lexicalToolHelper = {{
 "#
                 ),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1129,6 +1153,8 @@ console.log("helpers-ran");
 "#
                 .to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1193,6 +1219,8 @@ console.log(out.type);
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1250,6 +1278,8 @@ console.log(out.type);
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1306,6 +1336,8 @@ await codex.emitImage({ bytes: png, mimeType: "image/png" });
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1362,6 +1394,8 @@ await codex.emitImage(
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1424,6 +1458,8 @@ console.log("cell-complete");
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1485,6 +1521,8 @@ const lexicalEmitHelper = {{
 "#
                 ),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1502,6 +1540,8 @@ console.log("helpers-ran");
 "#
                 .to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1559,6 +1599,8 @@ console.log("cell-complete");
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -1607,6 +1649,8 @@ console.log("cell-complete");
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1655,6 +1699,8 @@ await codex.emitImage({ bytes: png });
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -1698,6 +1744,8 @@ await codex.emitImage("https://example.com/image.png");
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -1741,6 +1789,8 @@ await codex.emitImage("DATA:image/png;base64,AAA");
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1794,6 +1844,8 @@ await codex.emitImage({ bytes: png, mimeType: "image/png", detail: "ultra" });
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -1844,6 +1896,8 @@ await codex.emitImage({ bytes: png, mimeType: "image/png", detail: null });
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -1930,6 +1984,8 @@ await codex.emitImage(out);
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         ),
         response_watcher,
@@ -2021,6 +2077,8 @@ console.log(text);
                 JsReplArgs {
                     code,
                     timeout_ms: Some(15_000),
+                    what: None,
+                    why: None,
                 },
             ),
             response_watcher,
@@ -2094,6 +2152,8 @@ console.log(JSON.stringify(out));
             JsReplArgs {
                 code: code.to_string(),
                 timeout_ms: Some(15_000),
+                what: None,
+                why: None,
             },
         ),
         response_watcher,
@@ -2144,6 +2204,8 @@ async fn js_repl_prefers_env_node_module_dirs_over_config() -> anyhow::Result<()
                 code: "const mod = await import(\"repl_probe\"); console.log(mod.value);"
                     .to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -2191,6 +2253,8 @@ async fn js_repl_resolves_from_first_config_dir() -> anyhow::Result<()> {
                 code: "const mod = await import(\"repl_probe\"); console.log(mod.value);"
                     .to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -2232,6 +2296,8 @@ async fn js_repl_falls_back_to_cwd_node_modules() -> anyhow::Result<()> {
                 code: "const mod = await import(\"repl_probe\"); console.log(mod.value);"
                     .to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -2273,6 +2339,8 @@ async fn js_repl_accepts_node_modules_dir_entries() -> anyhow::Result<()> {
                 code: "const mod = await import(\"repl_probe\"); console.log(mod.value);"
                     .to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -2326,6 +2394,8 @@ async fn js_repl_supports_relative_file_imports() -> anyhow::Result<()> {
                 JsReplArgs {
                     code: "const parent = await import(\"./parent.js\"); const other = await import(\"./local.mjs\"); console.log(parent.value); console.log(other.value);".to_string(),
                     timeout_ms: Some(10_000),
+                what: None,
+                why: None,
                 },
             )
             .await?;
@@ -2375,6 +2445,8 @@ async fn js_repl_supports_absolute_file_imports() -> anyhow::Result<()> {
                     "const mod = await import({absolute_path_json}); console.log(mod.value);"
                 ),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -2427,6 +2499,8 @@ async fn js_repl_imported_local_files_can_access_repl_globals() -> anyhow::Resul
             JsReplArgs {
                 code: "await import(\"./globals.js\");".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -2471,6 +2545,8 @@ async fn js_repl_reimports_local_files_after_edit() -> anyhow::Result<()> {
                 JsReplArgs {
                     code: "const { value: firstValue } = await import(\"./helper.js\");\nconsole.log(firstValue);".to_string(),
                     timeout_ms: Some(10_000),
+                what: None,
+                why: None,
                 },
             )
             .await?;
@@ -2486,6 +2562,8 @@ async fn js_repl_reimports_local_files_after_edit() -> anyhow::Result<()> {
                 JsReplArgs {
                     code: "console.log(firstValue);\nconst { value: secondValue } = await import(\"./helper.js\");\nconsole.log(secondValue);".to_string(),
                     timeout_ms: Some(10_000),
+                what: None,
+                why: None,
                 },
             )
             .await?;
@@ -2527,6 +2605,8 @@ async fn js_repl_reimports_local_files_after_fixing_failure() -> anyhow::Result<
             JsReplArgs {
                 code: "await import(\"./broken.js\");".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -2543,6 +2623,8 @@ async fn js_repl_reimports_local_files_after_fixing_failure() -> anyhow::Result<
             JsReplArgs {
                 code: "console.log((await import(\"./broken.js\")).value);".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -2605,6 +2687,8 @@ async fn js_repl_local_files_expose_node_like_import_meta() -> anyhow::Result<()
             JsReplArgs {
                 code: "await import(\"./meta.js\");".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await?;
@@ -2642,6 +2726,8 @@ async fn js_repl_rejects_top_level_static_imports_with_clear_error() -> anyhow::
             JsReplArgs {
                 code: "import \"./local.js\";".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -2690,6 +2776,8 @@ async fn js_repl_local_files_reject_static_bare_imports() -> anyhow::Result<()> 
             JsReplArgs {
                 code: "await import(\"./entry.js\");".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -2735,6 +2823,8 @@ async fn js_repl_rejects_unsupported_file_specifiers() -> anyhow::Result<()> {
             JsReplArgs {
                 code: "await import(\"./local.ts\");".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -2753,6 +2843,8 @@ async fn js_repl_rejects_unsupported_file_specifiers() -> anyhow::Result<()> {
             JsReplArgs {
                 code: "await import(\"./local\");".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -2771,6 +2863,8 @@ async fn js_repl_rejects_unsupported_file_specifiers() -> anyhow::Result<()> {
             JsReplArgs {
                 code: "await import(\"./dir\");".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -2789,6 +2883,8 @@ async fn js_repl_rejects_unsupported_file_specifiers() -> anyhow::Result<()> {
             JsReplArgs {
                 code: "await import(\"https://example.com/test.js\");".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -2837,6 +2933,8 @@ async fn js_repl_blocks_sensitive_builtin_imports_from_local_files() -> anyhow::
             JsReplArgs {
                 code: "await import(\"./blocked.js\");".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await
@@ -2887,6 +2985,8 @@ async fn js_repl_local_files_do_not_escape_node_module_search_roots() -> anyhow:
             JsReplArgs {
                 code: "await import(\"./entry.js\");".to_string(),
                 timeout_ms: Some(10_000),
+                what: None,
+                why: None,
             },
         )
         .await
