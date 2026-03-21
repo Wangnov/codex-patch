@@ -370,8 +370,11 @@ impl ExecCell {
 
     fn command_reasoning_lines(call: &ExecCall, width: u16) -> Vec<Line<'static>> {
         let mut out = Vec::new();
-        let rows = [("WHAT", call.what.as_deref()), ("WHY", call.why.as_deref())];
-        for (label, value) in rows {
+        let rows = [
+            ("WHAT", call.what.as_deref(), Color::LightMagenta),
+            ("WHY", call.why.as_deref(), Color::Magenta),
+        ];
+        for (label, value, color) in rows {
             let Some(value) = value else {
                 continue;
             };
@@ -379,7 +382,7 @@ impl ExecCell {
                 continue;
             }
             let content = Line::from(value.to_string());
-            let initial_indent = Line::from(vec![label.cyan().bold(), " ".into()]);
+            let initial_indent = Line::from(vec![Span::from(label).fg(color).bold(), " ".into()]);
             let subsequent_indent = " ".repeat(initial_indent.width()).into();
             let wrapped = word_wrap_line(
                 &content,
@@ -1066,6 +1069,56 @@ mod tests {
         assert!(rendered.contains("print greeting text"));
         assert!(rendered.contains("WHY"));
         assert!(rendered.contains("verify WHAT and WHY are visible in the TUI"));
+    }
+
+    #[test]
+    fn command_display_styles_what_and_why_labels() {
+        let call = ExecCall {
+            call_id: "call-meta-style".to_string(),
+            command: vec!["bash".into(), "-lc".into(), "echo hi".into()],
+            parsed: Vec::new(),
+            what: Some("print greeting text".to_string()),
+            why: Some("verify WHAT and WHY colors".to_string()),
+            output: None,
+            source: ExecCommandSource::Agent,
+            start_time: None,
+            duration: None,
+            interaction_input: None,
+        };
+        let lines = ExecCell::new(call, false).command_display_lines(80);
+        let what_label = lines
+            .iter()
+            .flat_map(|line| line.spans.iter())
+            .find(|span| span.content.as_ref() == "WHAT")
+            .expect("WHAT label span");
+        let why_label = lines
+            .iter()
+            .flat_map(|line| line.spans.iter())
+            .find(|span| span.content.as_ref() == "WHY")
+            .expect("WHY label span");
+
+        assert_eq!(what_label.style.fg, Some(Color::LightMagenta));
+        assert!(what_label.style.add_modifier.contains(Modifier::BOLD));
+        assert_eq!(why_label.style.fg, Some(Color::Magenta));
+        assert!(why_label.style.add_modifier.contains(Modifier::BOLD));
+    }
+
+    #[test]
+    fn command_display_snapshots_what_and_why_styles() {
+        let call = ExecCall {
+            call_id: "call-meta-snapshot".to_string(),
+            command: vec!["bash".into(), "-lc".into(), "echo hi".into()],
+            parsed: Vec::new(),
+            what: Some("print greeting text".to_string()),
+            why: Some("verify WHAT and WHY snapshot colors".to_string()),
+            output: None,
+            source: ExecCommandSource::Agent,
+            start_time: None,
+            duration: None,
+            interaction_input: None,
+        };
+
+        insta::assert_debug_snapshot!(ExecCell::new(call, false).command_display_lines(80));
     }
 
     #[test]

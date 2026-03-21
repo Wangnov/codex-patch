@@ -904,6 +904,8 @@ fn command_execution_started_event(turn_id: &str, item: &ThreadItem) -> Option<V
                 .collect(),
             source: source.to_core(),
             interaction_input: None,
+            what: None,
+            why: None,
         }),
     }])
 }
@@ -964,6 +966,8 @@ fn command_execution_completed_event(turn_id: &str, item: &ThreadItem) -> Option
                 .collect(),
             source: source.to_core(),
             interaction_input: None,
+            what: None,
+            why: None,
             stdout: String::new(),
             stderr: String::new(),
             aggregated_output: aggregated_output.clone(),
