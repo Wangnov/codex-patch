@@ -51,7 +51,7 @@ fn render_js_repl_instructions(config: &Config) -> Option<String> {
     section.push_str(
         "- Use `js_repl` for Node-backed JavaScript with top-level await in a persistent kernel.\n",
     );
-    section.push_str("- `js_repl` is a freeform/custom tool. Direct `js_repl` calls must send raw JavaScript tool input (optionally with first-line `// codex-js-repl: timeout_ms=15000`). Do not wrap code in JSON (for example `{\"code\":\"...\"}`), quotes, or markdown code fences.\n");
+    section.push_str("- `js_repl` is a freeform/custom tool. Direct `js_repl` calls must send raw JavaScript tool input (optionally with first-line `// codex-js-repl: timeout_ms=15000` or `// codex-js-repl: {\"timeout_ms\":15000,\"what\":\"inspect DOM\",\"why\":\"check page structure\"}`). Do not wrap code in JSON (for example `{\"code\":\"...\"}`), quotes, or markdown code fences.\n");
     section.push_str(
         "- Helpers: `codex.cwd`, `codex.homeDir`, `codex.tmpDir`, `codex.tool(name, args?)`, and `codex.emitImage(imageLike)`.\n",
     );

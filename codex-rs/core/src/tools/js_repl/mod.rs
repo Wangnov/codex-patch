@@ -109,6 +109,10 @@ pub struct JsReplArgs {
     pub code: String,
     #[serde(default)]
     pub timeout_ms: Option<u64>,
+    #[serde(default)]
+    pub what: Option<String>,
+    #[serde(default)]
+    pub why: Option<String>,
 }
 
 #[derive(Clone, Debug)]

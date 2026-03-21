@@ -1,0 +1,27 @@
+---
+source: tui/src/exec_cell/render.rs
+assertion_line: 1113
+expression: "ExecCell::new(call, false).command_display_lines(80)"
+---
+[
+    Line::from_iter([
+        Span::from("•").dim(),
+        Span::from(" "),
+        Span::from("Running").bold(),
+        Span::from(" "),
+        Span::from("echo").fg(Color::Rgb(137, 180, 250)),
+        Span::from(" hi").fg(Color::Rgb(205, 214, 244)),
+    ]),
+    Line::from_iter([
+        Span::from("  └ ").dim(),
+        Span::from("WHAT").light_magenta().bold(),
+        Span::from(" "),
+        Span::from("print greeting text"),
+    ]),
+    Line::from_iter([
+        Span::from("    ").dim(),
+        Span::from("WHY").magenta().bold(),
+        Span::from(" "),
+        Span::from("verify WHAT and WHY snapshot colors"),
+    ]),
+]
