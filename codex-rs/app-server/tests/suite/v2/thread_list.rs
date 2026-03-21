@@ -464,6 +464,51 @@ async fn thread_list_respects_provider_filter() -> Result<()> {
 }
 
 #[tokio::test]
+async fn thread_list_without_provider_filter_includes_all_providers() -> Result<()> {
+    let codex_home = TempDir::new()?;
+    create_minimal_config(codex_home.path())?;
+
+    create_fake_rollout(
+        codex_home.path(),
+        "2025-01-02T10-00-00",
+        "2025-01-02T10:00:00Z",
+        "X",
+        Some("mock_provider"),
+        None,
+    )?;
+    create_fake_rollout(
+        codex_home.path(),
+        "2025-01-02T11-00-00",
+        "2025-01-02T11:00:00Z",
+        "X",
+        Some("other_provider"),
+        None,
+    )?;
+
+    let mut mcp = init_mcp(codex_home.path()).await?;
+
+    let ThreadListResponse { data, .. } =
+        list_threads(&mut mcp, None, Some(10), None, None, None).await?;
+
+    let providers: Vec<_> = data
+        .iter()
+        .map(|thread| thread.model_provider.as_str())
+        .collect();
+    assert_eq!(providers, vec!["other_provider", "mock_provider"]);
+
+    let ThreadListResponse { data, .. } =
+        list_threads(&mut mcp, None, Some(10), Some(vec![]), None, None).await?;
+
+    let providers: Vec<_> = data
+        .iter()
+        .map(|thread| thread.model_provider.as_str())
+        .collect();
+    assert_eq!(providers, vec!["other_provider", "mock_provider"]);
+
+    Ok(())
+}
+
+#[tokio::test]
 async fn thread_list_respects_cwd_filter() -> Result<()> {
     let codex_home = TempDir::new()?;
     create_minimal_config(codex_home.path())?;
