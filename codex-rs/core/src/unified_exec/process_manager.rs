@@ -264,6 +264,8 @@ impl UnifiedExecProcessManager {
                     Arc::clone(&transcript),
                     message.clone(),
                     wall_time,
+                    request.what.clone(),
+                    request.why.clone(),
                 )
                 .await;
             }
