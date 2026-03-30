@@ -136,6 +136,8 @@ pub(crate) fn spawn_exit_watcher(
                 transcript,
                 message,
                 duration,
+                what,
+                why,
             )
             .await;
         } else {
@@ -248,6 +250,8 @@ pub(crate) async fn emit_failed_exec_end_for_unified_exec(
     transcript: Arc<Mutex<HeadTailBuffer>>,
     message: String,
     duration: Duration,
+    what: Option<String>,
+    why: Option<String>,
 ) {
     let stdout = resolve_aggregated_output(&transcript, String::new()).await;
     let aggregated_output = if stdout.is_empty() {
@@ -274,6 +278,8 @@ pub(crate) async fn emit_failed_exec_end_for_unified_exec(
         cwd,
         ExecCommandSource::UnifiedExecStartup,
         process_id,
+        what,
+        why,
     );
     emitter
         .emit(
