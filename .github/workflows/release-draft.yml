@@ -84,12 +84,12 @@ jobs:
               handle.write(f"path={notes_path}\n")
           PY
 
-      - name: Create draft release
+      - name: Create release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
           body_path: ${{ steps.release_notes.outputs.path }}
-          draft: true
+          draft: false
           files: dist/release/**
           name: ${{ inputs.display_version }}
-          prerelease: true
+          prerelease: false
           tag_name: ${{ inputs.release_tag }}
