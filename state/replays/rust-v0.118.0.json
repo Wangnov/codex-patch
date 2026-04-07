@@ -1,0 +1,52 @@
+{
+  "applied_groups": [
+    "what-why-shnote",
+    "cross-provider-defaults",
+    "private-version-injection"
+  ],
+  "display_version": "0.118.0-p2",
+  "origin_remote_configured": true,
+  "outcome": "success",
+  "private_git_tag": "codex-patch-rust-v0.118.0-p2",
+  "recorded_at": "2026-04-07T10:37:15Z",
+  "replay_branch": "replay/rust-v0.118.0",
+  "upstream_release_tag": "rust-v0.118.0",
+  "validations_run": [
+    [
+      "cargo",
+      "test",
+      "-p",
+      "codex-core",
+      "test_exec_command_rejects_blank_what_and_why",
+      "--",
+      "--nocapture"
+    ],
+    [
+      "cargo",
+      "test",
+      "-p",
+      "codex-core",
+      "rejects_escalated_permissions_when_policy_not_on_request",
+      "--",
+      "--nocapture"
+    ],
+    [
+      "cargo",
+      "test",
+      "-p",
+      "codex-app-server",
+      "thread_list_without_provider_filter_includes_all_providers",
+      "--",
+      "--nocapture"
+    ],
+    [
+      "cargo",
+      "test",
+      "-p",
+      "codex-tui",
+      "remote_thread_list_params_omit_provider_filter",
+      "--",
+      "--nocapture"
+    ]
+  ]
+}
