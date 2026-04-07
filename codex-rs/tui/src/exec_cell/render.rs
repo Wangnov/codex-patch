@@ -1052,9 +1052,9 @@ mod tests {
             duration: None,
             interaction_input: None,
         };
-        let cell = ExecCell::new(call, false);
+        let cell = ExecCell::new(call, /*animations_enabled*/ false);
         let rendered = cell
-            .command_display_lines(80)
+            .command_display_lines(/*width*/ 80)
             .into_iter()
             .map(|line| {
                 line.spans
@@ -1085,7 +1085,8 @@ mod tests {
             duration: None,
             interaction_input: None,
         };
-        let lines = ExecCell::new(call, false).command_display_lines(80);
+        let lines = ExecCell::new(call, /*animations_enabled*/ false)
+            .command_display_lines(/*width*/ 80);
         let what_label = lines
             .iter()
             .flat_map(|line| line.spans.iter())
@@ -1118,7 +1119,10 @@ mod tests {
             interaction_input: None,
         };
 
-        insta::assert_debug_snapshot!(ExecCell::new(call, false).command_display_lines(80));
+        insta::assert_debug_snapshot!(
+            ExecCell::new(call, /*animations_enabled*/ false)
+                .command_display_lines(/*width*/ 80)
+        );
     }
 
     #[test]
@@ -1135,9 +1139,9 @@ mod tests {
             duration: None,
             interaction_input: None,
         };
-        let cell = ExecCell::new(call, false);
+        let cell = ExecCell::new(call, /*animations_enabled*/ false);
         let rendered = cell
-            .transcript_lines(80)
+            .transcript_lines(/*width*/ 80)
             .into_iter()
             .map(|line| {
                 line.spans
@@ -1172,9 +1176,9 @@ mod tests {
             duration: None,
             interaction_input: None,
         };
-        let cell = ExecCell::new(call, false);
+        let cell = ExecCell::new(call, /*animations_enabled*/ false);
         let rendered = cell
-            .exploring_display_lines(80)
+            .exploring_display_lines(/*width*/ 80)
             .into_iter()
             .map(|line| {
                 line.spans

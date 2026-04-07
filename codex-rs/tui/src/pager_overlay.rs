@@ -1013,7 +1013,6 @@ mod tests {
             vec![ParsedCommand::Unknown { cmd: "ls".into() }],
             ExecCommandSource::Agent,
             /*interaction_input*/ None,
-            /*animations_enabled*/ true,
             /*what*/ None,
             /*why*/ None,
             /*animations_enabled*/ true,

@@ -2,22 +2,21 @@
   "groups": [
     {
       "name": "what-why-shnote",
-      "source_repo": "/Users/wangnov/codex",
+      "source_repo": "/Users/wangnov/codex-patch",
       "source_commits": [
-        "a3e67cc3b",
-        "cdd3ed1e4",
-        "78a202996",
-        "033e5c295",
-        "d35e0bcc9",
-        "03f03d232",
-        "ebcb0bb4a"
+        "d4abaf709",
+        "7bee84903",
+        "917ac4a81",
+        "b451a84fb",
+        "9e2899c1b",
+        "a9ad1590d"
       ]
     },
     {
       "name": "cross-provider-defaults",
-      "source_repo": "/Users/wangnov/codex",
+      "source_repo": "/Users/wangnov/codex-patch",
       "source_commits": [
-        "5daf6ef36"
+        "f34a1313f"
       ]
     },
     {

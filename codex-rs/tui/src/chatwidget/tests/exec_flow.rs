@@ -367,6 +367,8 @@ async fn exec_end_without_begin_uses_event_command() {
             parsed_cmd,
             source: ExecCommandSource::Agent,
             interaction_input: None,
+            what: None,
+            why: None,
             stdout: "done".to_string(),
             stderr: String::new(),
             aggregated_output: "done".to_string(),

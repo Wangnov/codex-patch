@@ -5446,6 +5446,8 @@ async fn rejects_escalated_permissions_when_policy_not_on_request() {
             payload: ToolPayload::Function {
                 arguments: serde_json::json!({
                     "command": params.command.clone(),
+                    "what": "print greeting text",
+                    "why": "verify escalation is rejected by approval policy",
                     "workdir": Some(turn_context.cwd.to_string_lossy().to_string()),
                     "timeout_ms": params.expiration.timeout_ms(),
                     "sandbox_permissions": params.sandbox_permissions,
@@ -5525,6 +5527,8 @@ async fn unified_exec_rejects_escalated_permissions_when_policy_not_on_request()
             payload: ToolPayload::Function {
                 arguments: serde_json::json!({
                     "cmd": "echo hi",
+                    "what": "print greeting text",
+                    "why": "verify escalation is rejected by approval policy",
                     "sandbox_permissions": SandboxPermissions::RequireEscalated,
                     "justification": "need unsandboxed execution",
                 })

@@ -6082,6 +6082,8 @@ impl ChatWidget {
                             .collect(),
                         source: source.to_core(),
                         interaction_input: None,
+                        what: None,
+                        why: None,
                     });
                 } else {
                     let aggregated_output = aggregated_output.unwrap_or_default();
@@ -6097,6 +6099,8 @@ impl ChatWidget {
                             .collect(),
                         source: source.to_core(),
                         interaction_input: None,
+                        what: None,
+                        why: None,
                         stdout: String::new(),
                         stderr: String::new(),
                         aggregated_output: aggregated_output.clone(),
@@ -6656,6 +6660,8 @@ impl ChatWidget {
                         .collect(),
                     source: source.to_core(),
                     interaction_input: None,
+                    what: None,
+                    why: None,
                 });
             }
             ThreadItem::FileChange { id, changes, .. } => {

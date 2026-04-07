@@ -107,7 +107,6 @@ fn validate_command_purpose(
     }
 }
 
-#[async_trait]
 impl ToolHandler for UnifiedExecHandler {
     type Output = ExecCommandToolOutput;
 

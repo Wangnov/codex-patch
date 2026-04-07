@@ -637,13 +637,13 @@ mod tests {
     use std::sync::Arc;
 
     use codex_protocol::models::ShellCommandToolCallParams;
+    use codex_shell_command::is_safe_command::is_known_safe_command;
+    use codex_shell_command::powershell::try_find_powershell_executable_blocking;
+    use codex_shell_command::powershell::try_find_pwsh_executable_blocking;
     use pretty_assertions::assert_eq;
 
     use crate::codex::make_session_and_context;
     use crate::exec_env::create_env;
-    use crate::is_safe_command::is_known_safe_command;
-    use crate::powershell::try_find_powershell_executable_blocking;
-    use crate::powershell::try_find_pwsh_executable_blocking;
     use crate::sandboxing::SandboxPermissions;
     use crate::shell::Shell;
     use crate::shell::ShellType;
@@ -690,10 +690,10 @@ mod tests {
 
     fn assert_safe(shell: &Shell, command: &str) {
         assert!(is_known_safe_command(
-            &shell.derive_exec_args(command, /* use_login_shell */ true)
+            &shell.derive_exec_args(command, /*use_login_shell*/ true)
         ));
         assert!(is_known_safe_command(
-            &shell.derive_exec_args(command, /* use_login_shell */ false)
+            &shell.derive_exec_args(command, /*use_login_shell*/ false)
         ));
     }
 
@@ -708,7 +708,9 @@ mod tests {
         let sandbox_permissions = SandboxPermissions::RequireEscalated;
         let justification = Some("because tests".to_string());
 
-        let expected_command = session.user_shell().derive_exec_args(&command, true);
+        let expected_command = session
+            .user_shell()
+            .derive_exec_args(&command, /*use_login_shell*/ true);
         let expected_cwd = turn_context.resolve_path(workdir.clone());
         let expected_env = create_env(
             &turn_context.shell_environment_policy,
@@ -733,7 +735,7 @@ mod tests {
             &session,
             &turn_context,
             session.conversation_id,
-            true,
+            /*allow_login_shell*/ true,
         )
         .expect("login shells should be allowed");
 
@@ -760,17 +762,24 @@ mod tests {
             shell_snapshot,
         };
 
-        let login_command = ShellCommandHandler::base_command(&shell, "echo login shell", true);
+        let login_command = ShellCommandHandler::base_command(
+            &shell,
+            "echo login shell",
+            /*use_login_shell*/ true,
+        );
         assert_eq!(
             login_command,
-            shell.derive_exec_args("echo login shell", true)
+            shell.derive_exec_args("echo login shell", /*use_login_shell*/ true)
         );
 
-        let non_login_command =
-            ShellCommandHandler::base_command(&shell, "echo non login shell", false);
+        let non_login_command = ShellCommandHandler::base_command(
+            &shell,
+            "echo non login shell",
+            /*use_login_shell*/ false,
+        );
         assert_eq!(
             non_login_command,
-            shell.derive_exec_args("echo non login shell", false)
+            shell.derive_exec_args("echo non login shell", /*use_login_shell*/ false)
         );
     }
 
@@ -795,20 +804,25 @@ mod tests {
             &session,
             &turn_context,
             session.conversation_id,
-            false,
+            /*allow_login_shell*/ false,
         )
         .expect("non-login shells should still be allowed");
 
         assert_eq!(
             exec_params.command,
-            session.user_shell().derive_exec_args("echo hello", false)
+            session
+                .user_shell()
+                .derive_exec_args("echo hello", /*use_login_shell*/ false)
         );
     }
 
     #[test]
     fn shell_command_handler_rejects_login_when_disallowed() {
-        let err = ShellCommandHandler::resolve_use_login_shell(Some(true), false)
-            .expect_err("explicit login should be rejected");
+        let err = ShellCommandHandler::resolve_use_login_shell(
+            Some(true),
+            /*allow_login_shell*/ false,
+        )
+        .expect_err("explicit login should be rejected");
 
         assert!(
             err.to_string()
@@ -820,26 +834,47 @@ mod tests {
     #[test]
     fn command_purpose_requires_non_empty_what_and_why() {
         assert!(
-            validate_command_purpose("shell", true, Some("list files"), Some("inspect repo"))
-                .is_ok()
+            validate_command_purpose(
+                "shell",
+                /*require_command_purpose*/ true,
+                Some("list files"),
+                Some("inspect repo"),
+            )
+            .is_ok()
         );
 
-        let missing_what = validate_command_purpose("shell", true, None, Some("inspect repo"))
-            .expect_err("missing what should be rejected");
+        let missing_what = validate_command_purpose(
+            "shell",
+            /*require_command_purpose*/ true,
+            /*what*/ None,
+            Some("inspect repo"),
+        )
+        .expect_err("missing what should be rejected");
         assert!(
             missing_what
                 .to_string()
                 .contains("requires non-empty `what` and `why`")
         );
 
-        let blank_why = validate_command_purpose("shell", true, Some("list files"), Some("  "))
-            .expect_err("blank why should be rejected");
+        let blank_why = validate_command_purpose(
+            "shell",
+            /*require_command_purpose*/ true,
+            Some("list files"),
+            Some("  "),
+        )
+        .expect_err("blank why should be rejected");
         assert!(
             blank_why
                 .to_string()
                 .contains("requires non-empty `what` and `why`")
         );
 
-        assert!(validate_command_purpose("shell", false, None, None).is_ok());
+        assert!(
+            validate_command_purpose(
+                "shell", /*require_command_purpose*/ false, /*what*/ None,
+                /*why*/ None,
+            )
+            .is_ok()
+        );
     }
 }

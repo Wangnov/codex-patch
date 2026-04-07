@@ -351,30 +351,46 @@ fn test_exec_command_rejects_blank_what_and_why() {
     assert!(
         validate_command_purpose(
             "exec_command",
-            true,
+            /*require_command_purpose*/ true,
             Some("run test command"),
             Some("verify behavior"),
         )
         .is_ok()
     );
 
-    let blank_what =
-        validate_command_purpose("exec_command", true, Some("  "), Some("verify behavior"))
-            .expect_err("blank what should be rejected");
+    let blank_what = validate_command_purpose(
+        "exec_command",
+        /*require_command_purpose*/ true,
+        Some("  "),
+        Some("verify behavior"),
+    )
+    .expect_err("blank what should be rejected");
     assert!(
         blank_what
             .to_string()
             .contains("requires non-empty `what` and `why`")
     );
 
-    let blank_why =
-        validate_command_purpose("exec_command", true, Some("run test command"), Some("  "))
-            .expect_err("blank why should be rejected");
+    let blank_why = validate_command_purpose(
+        "exec_command",
+        /*require_command_purpose*/ true,
+        Some("run test command"),
+        Some("  "),
+    )
+    .expect_err("blank why should be rejected");
     assert!(
         blank_why
             .to_string()
             .contains("requires non-empty `what` and `why`")
     );
 
-    assert!(validate_command_purpose("exec_command", false, None, None).is_ok());
+    assert!(
+        validate_command_purpose(
+            "exec_command",
+            /*require_command_purpose*/ false,
+            /*what*/ None,
+            /*why*/ None,
+        )
+        .is_ok()
+    );
 }

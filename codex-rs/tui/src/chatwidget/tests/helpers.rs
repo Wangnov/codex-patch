@@ -425,6 +425,8 @@ pub(super) fn begin_exec_with_source(
         parsed_cmd,
         source,
         interaction_input,
+        what: None,
+        why: None,
     };
     chat.handle_codex_event(Event {
         id: call_id.to_string(),
@@ -450,6 +452,8 @@ pub(super) fn begin_unified_exec_startup(
         parsed_cmd: Vec::new(),
         source: ExecCommandSource::UnifiedExecStartup,
         interaction_input: None,
+        what: None,
+        why: None,
     };
     chat.handle_codex_event(Event {
         id: call_id.to_string(),
@@ -565,6 +569,8 @@ pub(super) fn end_exec(
         source,
         interaction_input,
         process_id,
+        what,
+        why,
     } = begin_event;
     chat.handle_codex_event(Event {
         id: call_id.clone(),
@@ -577,6 +583,8 @@ pub(super) fn end_exec(
             parsed_cmd,
             source,
             interaction_input,
+            what,
+            why,
             stdout: stdout.to_string(),
             stderr: stderr.to_string(),
             aggregated_output: aggregated.clone(),

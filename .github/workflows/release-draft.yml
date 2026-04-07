@@ -1,0 +1,99 @@
+name: release-draft
+
+on:
+  workflow_call:
+    inputs:
+      display_version:
+        required: true
+        type: string
+      release_tag:
+        required: true
+        type: string
+      upstream_tag:
+        required: true
+        type: string
+
+jobs:
+  draft-release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: dist/raw
+
+      - name: Package release archives
+        shell: bash
+        env:
+          UPSTREAM_TAG: ${{ inputs.upstream_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release
+
+          for artifact_dir in dist/raw/release-*; do
+            [[ -d "${artifact_dir}" ]] || continue
+            target="${artifact_dir##*/release-}"
+
+            if [[ "${target}" == *windows* ]]; then
+              (
+                cd "${artifact_dir}"
+                zip -r "../../release/codex-patch-${target}.zip" .
+              )
+            else
+              tar -C "${artifact_dir}" -czf "dist/release/codex-patch-${target}.tar.gz" .
+            fi
+          done
+
+          cp release/release-manifest.json dist/release/release-manifest.json
+          cp "state/replays/${UPSTREAM_TAG}.json" "dist/release/replay-${UPSTREAM_TAG}.json"
+          cp codex-rs/core/config.schema.json dist/release/config-schema.json
+
+      - name: Generate release notes
+        id: release_notes
+        shell: bash
+        env:
+          DISPLAY_VERSION: ${{ inputs.display_version }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          UPSTREAM_TAG: ${{ inputs.upstream_tag }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          replay_path = Path("state") / "replays" / f"{os.environ['UPSTREAM_TAG']}.json"
+          replay_payload = json.loads(replay_path.read_text(encoding="utf-8"))
+          notes_path = Path(os.environ["RUNNER_TEMP"]) / "codex-patch-release-notes.md"
+
+          lines = [
+              f"Private Codex patch release {os.environ['DISPLAY_VERSION']}",
+              "",
+              f"- Private tag: `{os.environ['RELEASE_TAG']}`",
+              f"- Upstream release: `{os.environ['UPSTREAM_TAG']}`",
+          ]
+
+          for group_name in replay_payload.get("applied_groups", []):
+              lines.append(f"- Patch group: `{group_name}`")
+
+          for command in replay_payload.get("validations_run", []):
+              lines.append(f"- Validation: `{' '.join(command)}`")
+
+          notes_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"path={notes_path}\n")
+          PY
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
+        with:
+          body_path: ${{ steps.release_notes.outputs.path }}
+          draft: true
+          files: dist/release/**
+          name: ${{ inputs.display_version }}
+          prerelease: true
+          tag_name: ${{ inputs.release_tag }}
