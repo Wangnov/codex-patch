@@ -33,5 +33,7 @@ Agentic replay notes:
 Release matrix notes:
 
 - The GitHub repository is public so the release workflow is intentionally kept on standard GitHub-hosted runners.
+- Private release artifacts only publish the `codex` CLI binary for each target platform.
 - The current matrix is pinned to `ubuntu-24.04`, `ubuntu-24.04-arm`, `macos-15-intel`, `macos-15`, `windows-2022`, and `windows-11-arm`.
+- Linux release runners install `libcap-dev` before building so `codex-linux-sandbox` can compile for the CLI package.
 - Avoid larger runners and custom runner groups unless the release requirements change and the workflow is revalidated first.

@@ -50,11 +50,7 @@ jobs:
           if cargo_version != display_version:
               raise SystemExit(f"Cargo.toml version {cargo_version} does not match {display_version}")
 
-          package_paths = [
-              Path("codex-cli/package.json"),
-              Path("codex-rs/responses-api-proxy/npm/package.json"),
-              Path("sdk/typescript/package.json"),
-          ]
+          package_paths = [Path("codex-cli/package.json")]
           for package_path in package_paths:
               package_version = json.loads(package_path.read_text(encoding="utf-8"))["version"]
               if package_version != display_version:
@@ -99,21 +95,24 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libcap-dev
+
       - name: Build release binaries
         shell: bash
         run: |
           set -euo pipefail
 
-          build_args=(--bin codex --bin codex-responses-api-proxy)
-          if [[ "${{ matrix.target }}" == *windows* ]]; then
-            build_args+=(--bin codex-windows-sandbox-setup --bin codex-command-runner)
-          fi
-
           cargo build \
             --manifest-path codex-rs/Cargo.toml \
             --target "${{ matrix.target }}" \
             --release \
-            "${build_args[@]}"
+            --bin codex
 
       - name: Stage release payload
         shell: bash
@@ -130,12 +129,6 @@ jobs:
           mkdir -p "${stage_dir}"
 
           cp "${release_dir}/codex${suffix}" "${stage_dir}/"
-          cp "${release_dir}/codex-responses-api-proxy${suffix}" "${stage_dir}/"
-
-          if [[ "${{ matrix.target }}" == *windows* ]]; then
-            cp "${release_dir}/codex-windows-sandbox-setup${suffix}" "${stage_dir}/"
-            cp "${release_dir}/codex-command-runner${suffix}" "${stage_dir}/"
-          fi
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:

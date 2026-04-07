@@ -47,10 +47,6 @@ jobs:
             fi
           done
 
-          cp release/release-manifest.json dist/release/release-manifest.json
-          cp "state/replays/${UPSTREAM_TAG}.json" "dist/release/replay-${UPSTREAM_TAG}.json"
-          cp codex-rs/core/config.schema.json dist/release/config-schema.json
-
       - name: Generate release notes
         id: release_notes
         shell: bash
