@@ -43,6 +43,9 @@ jobs:
                 zip -r "../../release/codex-patch-${target}.zip" .
               )
             else
+              if [[ -f "${artifact_dir}/codex" ]]; then
+                chmod 755 "${artifact_dir}/codex"
+              fi
               tar -C "${artifact_dir}" -czf "dist/release/codex-patch-${target}.tar.gz" .
             fi
           done
