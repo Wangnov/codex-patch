@@ -1,0 +1,29 @@
+{
+  "groups": [
+    {
+      "name": "what-why-shnote",
+      "source_repo": "/Users/wangnov/codex",
+      "source_commits": [
+        "a3e67cc3b",
+        "cdd3ed1e4",
+        "78a202996",
+        "033e5c295",
+        "d35e0bcc9",
+        "03f03d232",
+        "ebcb0bb4a"
+      ]
+    },
+    {
+      "name": "cross-provider-defaults",
+      "source_repo": "/Users/wangnov/codex",
+      "source_commits": [
+        "5daf6ef36"
+      ]
+    },
+    {
+      "name": "private-version-injection",
+      "source_repo": "/Users/wangnov/codex-patch",
+      "source_commits": []
+    }
+  ]
+}
