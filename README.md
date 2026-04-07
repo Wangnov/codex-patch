@@ -36,4 +36,6 @@ Release matrix notes:
 - Private release artifacts only publish the `codex` CLI binary for each target platform.
 - The current matrix is pinned to `ubuntu-24.04`, `ubuntu-24.04-arm`, `macos-15-intel`, `macos-15`, `windows-2022`, and `windows-11-arm`.
 - Linux release runners install `libcap-dev` before building so `codex-linux-sandbox` can compile for the CLI package.
+- Non-Windows release builds force `CARGO_PROFILE_RELEASE_LTO=thin` to stay closer to upstream release behavior and reduce ARM runner pressure.
+- The Windows ARM CLI build adds `/arm64hazardfree` to the MSVC linker flags to avoid the known `LNK1322` Cortex-A53 hazard check failure.
 - Avoid larger runners and custom runner groups unless the release requirements change and the workflow is revalidated first.
