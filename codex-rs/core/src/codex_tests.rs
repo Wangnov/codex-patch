@@ -5175,6 +5175,8 @@ async fn rejects_escalated_permissions_when_policy_not_on_request() {
                     "timeout_ms": params.expiration.timeout_ms(),
                     "sandbox_permissions": params.sandbox_permissions,
                     "justification": params.justification.clone(),
+                    "what": "print greeting text",
+                    "why": "exercise approval-policy rejection path",
                 })
                 .to_string(),
             },
@@ -5219,6 +5221,8 @@ async fn rejects_escalated_permissions_when_policy_not_on_request() {
                     "timeout_ms": params2.expiration.timeout_ms(),
                     "sandbox_permissions": params2.sandbox_permissions,
                     "justification": params2.justification.clone(),
+                    "what": "print greeting text",
+                    "why": "exercise non-escalated shell success path",
                 })
                 .to_string(),
             },
@@ -5273,6 +5277,8 @@ async fn unified_exec_rejects_escalated_permissions_when_policy_not_on_request()
                     "cmd": "echo hi",
                     "sandbox_permissions": SandboxPermissions::RequireEscalated,
                     "justification": "need unsandboxed execution",
+                    "what": "print greeting text",
+                    "why": "exercise unified exec approval-policy rejection path",
                 })
                 .to_string(),
             },

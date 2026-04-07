@@ -3786,6 +3786,8 @@ fn begin_exec_with_source(
         cwd,
         parsed_cmd,
         source,
+        what: None,
+        why: None,
         interaction_input,
     };
     chat.handle_codex_event(Event {
@@ -3811,6 +3813,8 @@ fn begin_unified_exec_startup(
         cwd,
         parsed_cmd: Vec::new(),
         source: ExecCommandSource::UnifiedExecStartup,
+        what: None,
+        why: None,
         interaction_input: None,
     };
     chat.handle_codex_event(Event {
@@ -3912,6 +3916,8 @@ fn end_exec(
         cwd,
         parsed_cmd,
         source,
+        what,
+        why,
         interaction_input,
         process_id,
     } = begin_event;
@@ -3925,6 +3931,8 @@ fn end_exec(
             cwd,
             parsed_cmd,
             source,
+            what,
+            why,
             interaction_input,
             stdout: stdout.to_string(),
             stderr: stderr.to_string(),
@@ -6181,6 +6189,8 @@ async fn exec_end_without_begin_uses_event_command() {
             cwd,
             parsed_cmd,
             source: ExecCommandSource::Agent,
+            what: None,
+            why: None,
             interaction_input: None,
             stdout: "done".to_string(),
             stderr: String::new(),
@@ -13794,6 +13804,8 @@ async fn chatwidget_exec_and_status_layout_vt100_snapshot() {
             cwd: cwd.clone(),
             parsed_cmd: parsed_cmd.clone(),
             source: ExecCommandSource::Agent,
+            what: None,
+            why: None,
             interaction_input: None,
         }),
     });
@@ -13807,6 +13819,8 @@ async fn chatwidget_exec_and_status_layout_vt100_snapshot() {
             cwd,
             parsed_cmd,
             source: ExecCommandSource::Agent,
+            what: None,
+            why: None,
             interaction_input: None,
             stdout: String::new(),
             stderr: String::new(),

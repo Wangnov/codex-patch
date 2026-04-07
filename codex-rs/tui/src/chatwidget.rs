@@ -6154,6 +6154,8 @@ impl ChatWidget {
                             .map(codex_app_server_protocol::CommandAction::into_core)
                             .collect(),
                         source: source.to_core(),
+                        what: None,
+                        why: None,
                         interaction_input: None,
                     });
                 } else {
@@ -6169,6 +6171,8 @@ impl ChatWidget {
                             .map(codex_app_server_protocol::CommandAction::into_core)
                             .collect(),
                         source: source.to_core(),
+                        what: None,
+                        why: None,
                         interaction_input: None,
                         stdout: String::new(),
                         stderr: String::new(),
@@ -6728,6 +6732,8 @@ impl ChatWidget {
                         .map(codex_app_server_protocol::CommandAction::into_core)
                         .collect(),
                     source: source.to_core(),
+                    what: None,
+                    why: None,
                     interaction_input: None,
                 });
             }
