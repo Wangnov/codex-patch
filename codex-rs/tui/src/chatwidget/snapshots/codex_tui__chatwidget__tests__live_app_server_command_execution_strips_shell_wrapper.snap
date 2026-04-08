@@ -3,4 +3,6 @@ source: tui/src/chatwidget/tests.rs
 expression: blob
 ---
 • You ran python3 -c 'print("Hello, world!")'
+  └ WHAT print greeting text
+    WHY verify app-server WHAT and WHY render in the TUI
   └ Hello, world!

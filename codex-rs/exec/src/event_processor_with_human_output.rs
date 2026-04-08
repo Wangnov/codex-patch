@@ -66,13 +66,29 @@ impl EventProcessorWithHumanOutput {
 
     fn render_item_started(&self, item: &ThreadItem) {
         match item {
-            ThreadItem::CommandExecution { command, cwd, .. } => {
+            ThreadItem::CommandExecution {
+                command,
+                cwd,
+                what,
+                why,
+                ..
+            } => {
                 eprintln!(
                     "{}\n{} in {}",
                     "exec".style(self.italic).style(self.magenta),
                     command.style(self.bold),
                     cwd.display()
                 );
+                if let Some(what) = what.as_deref()
+                    && !what.trim().is_empty()
+                {
+                    eprintln!("{} {}", "WHAT:".style(self.bold).style(self.magenta), what);
+                }
+                if let Some(why) = why.as_deref()
+                    && !why.trim().is_empty()
+                {
+                    eprintln!("{} {}", "WHY:".style(self.bold).style(self.yellow), why);
+                }
             }
             ThreadItem::McpToolCall { server, tool, .. } => {
                 eprintln!(

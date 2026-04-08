@@ -157,6 +157,8 @@ struct CommandExecutionCompletionItem {
     command: String,
     cwd: PathBuf,
     command_actions: Vec<V2ParsedCommand>,
+    what: Option<String>,
+    why: Option<String>,
 }
 
 async fn resolve_server_request_on_thread_listener(
@@ -651,6 +653,8 @@ pub(crate) async fn apply_bespoke_event_handling(
                             command: command_string,
                             cwd: cwd.clone(),
                             command_actions: command_actions.clone(),
+                            what: None,
+                            why: None,
                         };
                         CommandExecutionApprovalPresentation::Command(completion_item)
                     };
@@ -1622,6 +1626,8 @@ pub(crate) async fn apply_bespoke_event_handling(
                 cwd,
                 process_id,
                 source: exec_command_begin_event.source.into(),
+                what: exec_command_begin_event.what,
+                why: exec_command_begin_event.why,
                 status: CommandExecutionStatus::InProgress,
                 command_actions,
                 aggregated_output: None,
@@ -1699,6 +1705,8 @@ pub(crate) async fn apply_bespoke_event_handling(
                 cwd,
                 parsed_cmd,
                 process_id,
+                what,
+                why,
                 aggregated_output,
                 exit_code,
                 duration,
@@ -1735,6 +1743,8 @@ pub(crate) async fn apply_bespoke_event_handling(
                 cwd,
                 process_id,
                 source: source.into(),
+                what,
+                why,
                 status,
                 command_actions,
                 aggregated_output,
@@ -2000,6 +2010,8 @@ async fn complete_command_execution_item(
     process_id: Option<String>,
     source: CommandExecutionSource,
     command_actions: Vec<V2ParsedCommand>,
+    what: Option<String>,
+    why: Option<String>,
     status: CommandExecutionStatus,
     outgoing: &ThreadScopedOutgoingMessageSender,
 ) {
@@ -2009,6 +2021,8 @@ async fn complete_command_execution_item(
         cwd,
         process_id,
         source,
+        what,
+        why,
         status,
         command_actions,
         aggregated_output: None,
@@ -2717,6 +2731,8 @@ async fn on_command_execution_request_approval_response(
             /*process_id*/ None,
             CommandExecutionSource::Agent,
             completion_item.command_actions,
+            completion_item.what,
+            completion_item.why,
             status,
             &outgoing,
         )

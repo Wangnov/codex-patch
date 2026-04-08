@@ -222,8 +222,8 @@ class ReplayBranchTests(unittest.TestCase):
             (repo_root / "release" / "release-manifest.json").write_text(
                 json.dumps(
                     {
-                        "display_version": "0.118.0-p1",
-                        "private_git_tag": "codex-patch-rust-v0.118.0-p1",
+                        "display_version": "0.118.0-p2",
+                        "private_git_tag": "codex-patch-rust-v0.118.0-p2",
                         "private_patch_generation": 1,
                         "upstream_tag": "rust-v0.118.0",
                     }

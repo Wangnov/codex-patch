@@ -4273,6 +4273,12 @@ pub enum ThreadItem {
         process_id: Option<String>,
         #[serde(default)]
         source: CommandExecutionSource,
+        /// High-level summary of what the command is doing.
+        #[serde(default)]
+        what: Option<String>,
+        /// High-level reason for why the command is running.
+        #[serde(default)]
+        why: Option<String>,
         status: CommandExecutionStatus,
         /// A best-effort parsing of the command to understand the action(s) it will perform.
         /// This returns a list of CommandAction objects because a single shell command may

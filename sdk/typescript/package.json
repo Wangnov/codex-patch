@@ -1,6 +1,6 @@
 {
   "name": "@openai/codex-sdk",
-  "version": "0.118.0-p1",
+  "version": "0.118.0-p2",
   "description": "TypeScript SDK for Codex APIs.",
   "repository": {
     "type": "git",

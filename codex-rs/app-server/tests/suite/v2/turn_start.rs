@@ -2459,6 +2459,8 @@ async fn command_execution_notifications_include_process_id() -> Result<()> {
     let ThreadItem::CommandExecution {
         id,
         process_id: started_process_id,
+        what: started_what,
+        why: started_why,
         status,
         ..
     } = started_command
@@ -2467,6 +2469,11 @@ async fn command_execution_notifications_include_process_id() -> Result<()> {
     };
     assert_eq!(id, "uexec-1");
     assert_eq!(status, CommandExecutionStatus::InProgress);
+    assert_eq!(started_what.as_deref(), Some("print greeting text"));
+    assert_eq!(
+        started_why.as_deref(),
+        Some("verify command execution notifications preserve WHAT and WHY")
+    );
     let started_process_id = started_process_id.expect("process id should be present");
 
     let completed_command = timeout(DEFAULT_READ_TIMEOUT, async {
@@ -2489,6 +2496,8 @@ async fn command_execution_notifications_include_process_id() -> Result<()> {
     let ThreadItem::CommandExecution {
         id: completed_id,
         process_id: completed_process_id,
+        what: completed_what,
+        why: completed_why,
         status: completed_status,
         exit_code,
         ..
@@ -2497,6 +2506,11 @@ async fn command_execution_notifications_include_process_id() -> Result<()> {
         unreachable!("loop ensures we break on command execution items");
     };
     assert_eq!(completed_id, "uexec-1");
+    assert_eq!(completed_what.as_deref(), Some("print greeting text"));
+    assert_eq!(
+        completed_why.as_deref(),
+        Some("verify command execution notifications preserve WHAT and WHY")
+    );
     assert!(
         matches!(
             completed_status,

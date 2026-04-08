@@ -4,10 +4,10 @@
     "cross-provider-defaults",
     "private-version-injection"
   ],
-  "display_version": "0.118.0-p1",
+  "display_version": "0.118.0-p2",
   "origin_remote_configured": true,
   "outcome": "success",
-  "private_git_tag": "codex-patch-rust-v0.118.0-p1",
+  "private_git_tag": "codex-patch-rust-v0.118.0-p2",
   "recorded_at": "2026-04-07T10:39:59Z",
   "replay_branch": "replay/rust-v0.118.0",
   "upstream_release_tag": "rust-v0.118.0",
