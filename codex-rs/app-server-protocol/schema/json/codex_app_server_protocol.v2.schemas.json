@@ -10850,6 +10850,22 @@
               ],
               "title": "CommandExecutionThreadItemType",
               "type": "string"
+            },
+            "what": {
+              "default": null,
+              "description": "High-level summary of what the command is doing.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "why": {
+              "default": null,
+              "description": "High-level reason for why the command is running.",
+              "type": [
+                "string",
+                "null"
+              ]
             }
           },
           "required": [

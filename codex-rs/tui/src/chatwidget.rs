@@ -6236,6 +6236,8 @@ impl ChatWidget {
                 cwd,
                 process_id,
                 source,
+                what,
+                why,
                 status,
                 command_actions,
                 aggregated_output,
@@ -6257,9 +6259,9 @@ impl ChatWidget {
                             .map(codex_app_server_protocol::CommandAction::into_core)
                             .collect(),
                         source: source.to_core(),
+                        what,
+                        why,
                         interaction_input: None,
-                        what: None,
-                        why: None,
                     });
                 } else {
                     let aggregated_output = aggregated_output.unwrap_or_default();
@@ -6274,9 +6276,9 @@ impl ChatWidget {
                             .map(codex_app_server_protocol::CommandAction::into_core)
                             .collect(),
                         source: source.to_core(),
+                        what,
+                        why,
                         interaction_input: None,
-                        what: None,
-                        why: None,
                         stdout: String::new(),
                         stderr: String::new(),
                         aggregated_output: aggregated_output.clone(),
@@ -6824,6 +6826,8 @@ impl ChatWidget {
                 process_id,
                 source,
                 command_actions,
+                what,
+                why,
                 ..
             } => {
                 self.on_exec_command_begin(ExecCommandBeginEvent {
@@ -6837,9 +6841,9 @@ impl ChatWidget {
                         .map(codex_app_server_protocol::CommandAction::into_core)
                         .collect(),
                     source: source.to_core(),
+                    what,
+                    why,
                     interaction_input: None,
-                    what: None,
-                    why: None,
                 });
             }
             ThreadItem::FileChange { id, changes, .. } => {

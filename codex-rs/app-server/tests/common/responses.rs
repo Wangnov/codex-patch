@@ -52,7 +52,9 @@ pub fn create_exec_command_sse_response(call_id: &str) -> anyhow::Result<String>
         .collect::<Vec<_>>();
     let tool_call_arguments = serde_json::to_string(&json!({
         "cmd": command.join(" "),
-        "yield_time_ms": 500
+        "yield_time_ms": 500,
+        "what": "print greeting text",
+        "why": "verify command execution notifications preserve WHAT and WHY"
     }))?;
     Ok(responses::sse(vec![
         responses::ev_response_created("resp-1"),

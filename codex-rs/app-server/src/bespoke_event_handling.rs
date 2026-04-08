@@ -1614,6 +1614,8 @@ pub(crate) async fn apply_bespoke_event_handling(
                     cwd,
                     process_id,
                     source: exec_command_begin_event.source.into(),
+                    what: exec_command_begin_event.what,
+                    why: exec_command_begin_event.why,
                     status: CommandExecutionStatus::InProgress,
                     command_actions,
                     aggregated_output: None,

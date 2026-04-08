@@ -158,6 +158,8 @@ impl EventProcessorWithJsonOutput {
             }
             ThreadItem::CommandExecution {
                 command,
+                what,
+                why,
                 aggregated_output,
                 exit_code,
                 status,
@@ -166,6 +168,8 @@ impl EventProcessorWithJsonOutput {
                 id: make_id(),
                 details: ThreadItemDetails::CommandExecution(CommandExecutionItem {
                     command,
+                    what,
+                    why,
                     aggregated_output: aggregated_output.unwrap_or_default(),
                     exit_code,
                     status: match status {
