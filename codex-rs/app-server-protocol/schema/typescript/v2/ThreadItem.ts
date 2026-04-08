@@ -35,7 +35,15 @@ cwd: AbsolutePathBuf,
 /**
  * Identifier for the underlying PTY process (when available).
  */
-processId: string | null, source: CommandExecutionSource, status: CommandExecutionStatus,
+processId: string | null, source: CommandExecutionSource, 
+/**
+ * High-level summary of what the command is doing.
+ */
+what: string | null, 
+/**
+ * High-level reason for why the command is running.
+ */
+why: string | null, status: CommandExecutionStatus, 
 /**
  * A best-effort parsing of the command to understand the action(s) it will perform.
  * This returns a list of CommandAction objects because a single shell command may

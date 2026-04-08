@@ -900,6 +900,8 @@ fn command_execution_started_event(turn_id: &str, item: &ThreadItem) -> Option<V
         process_id,
         source,
         command_actions,
+        what,
+        why,
         ..
     } = item
     else {
@@ -921,8 +923,8 @@ fn command_execution_started_event(turn_id: &str, item: &ThreadItem) -> Option<V
                 .collect(),
             source: source.to_core(),
             interaction_input: None,
-            what: None,
-            why: None,
+            what: what.clone(),
+            why: why.clone(),
         }),
     }])
 }
@@ -935,6 +937,8 @@ fn command_execution_completed_event(turn_id: &str, item: &ThreadItem) -> Option
         cwd,
         process_id,
         source,
+        what,
+        why,
         status,
         command_actions,
         aggregated_output,
@@ -983,8 +987,8 @@ fn command_execution_completed_event(turn_id: &str, item: &ThreadItem) -> Option
                 .collect(),
             source: source.to_core(),
             interaction_input: None,
-            what: None,
-            why: None,
+            what: what.clone(),
+            why: why.clone(),
             stdout: String::new(),
             stderr: String::new(),
             aggregated_output: aggregated_output.clone(),
@@ -1168,6 +1172,8 @@ mod tests {
             cwd: test_path_buf("/tmp").abs(),
             process_id: None,
             source: CommandExecutionSource::UserShell,
+            what: Some("print greeting text".to_string()),
+            why: Some("verify app-server adapter preserves WHAT and WHY".to_string()),
             status: CommandExecutionStatus::InProgress,
             command_actions: vec![CommandAction::Unknown {
                 command: "printf hello world".to_string(),
@@ -1198,6 +1204,11 @@ mod tests {
         );
         assert_eq!(begin.cwd.as_path(), test_path_buf("/tmp").as_path());
         assert_eq!(begin.source, ExecCommandSource::UserShell);
+        assert_eq!(begin.what.as_deref(), Some("print greeting text"));
+        assert_eq!(
+            begin.why.as_deref(),
+            Some("verify app-server adapter preserves WHAT and WHY")
+        );
 
         let (_, delta_events) =
             server_notification_thread_events(ServerNotification::CommandExecutionOutputDelta(
@@ -1224,6 +1235,8 @@ mod tests {
             cwd: test_path_buf("/tmp").abs(),
             process_id: None,
             source: CommandExecutionSource::UserShell,
+            what: Some("print greeting text".to_string()),
+            why: Some("verify app-server adapter preserves WHAT and WHY".to_string()),
             status: CommandExecutionStatus::Completed,
             command_actions: vec![CommandAction::Unknown {
                 command: "printf hello world".to_string(),
@@ -1251,6 +1264,11 @@ mod tests {
         assert_eq!(end.formatted_output, "hello world\n");
         assert_eq!(end.aggregated_output, "hello world\n");
         assert_eq!(end.source, ExecCommandSource::UserShell);
+        assert_eq!(end.what.as_deref(), Some("print greeting text"));
+        assert_eq!(
+            end.why.as_deref(),
+            Some("verify app-server adapter preserves WHAT and WHY")
+        );
     }
 
     #[test]
@@ -1261,6 +1279,8 @@ mod tests {
             cwd: test_path_buf("/tmp").abs(),
             process_id: None,
             source: CommandExecutionSource::UserShell,
+            what: None,
+            why: None,
             status: CommandExecutionStatus::InProgress,
             command_actions: vec![],
             aggregated_output: None,
@@ -1309,6 +1329,8 @@ mod tests {
                     cwd: test_path_buf("/tmp").abs(),
                     process_id: None,
                     source: CommandExecutionSource::UserShell,
+                    what: Some("print greeting text".to_string()),
+                    why: Some("verify snapshot replay preserves WHAT and WHY".to_string()),
                     status: CommandExecutionStatus::Completed,
                     command_actions: vec![CommandAction::Unknown {
                         command: "printf hello world".to_string(),
@@ -1332,11 +1354,21 @@ mod tests {
         };
         assert_eq!(begin.call_id, "cmd-1");
         assert_eq!(begin.source, ExecCommandSource::UserShell);
+        assert_eq!(begin.what.as_deref(), Some("print greeting text"));
+        assert_eq!(
+            begin.why.as_deref(),
+            Some("verify snapshot replay preserves WHAT and WHY")
+        );
         let EventMsg::ExecCommandEnd(end) = &events[2].msg else {
             panic!("expected exec end event");
         };
         assert_eq!(end.call_id, "cmd-1");
         assert_eq!(end.formatted_output, "hello world\n");
+        assert_eq!(end.what.as_deref(), Some("print greeting text"));
+        assert_eq!(
+            end.why.as_deref(),
+            Some("verify snapshot replay preserves WHAT and WHY")
+        );
         assert!(matches!(events[3].msg, EventMsg::TurnComplete(_)));
     }
 

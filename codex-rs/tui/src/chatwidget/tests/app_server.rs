@@ -231,6 +231,8 @@ async fn live_app_server_command_execution_strips_shell_wrapper() {
                 cwd: test_path_buf("/tmp").abs(),
                 process_id: None,
                 source: AppServerCommandExecutionSource::UserShell,
+                what: Some("print greeting text".to_string()),
+                why: Some("verify app-server WHAT and WHY render in the TUI".to_string()),
                 status: AppServerCommandExecutionStatus::InProgress,
                 command_actions: vec![AppServerCommandAction::Unknown {
                     command: script.to_string(),
@@ -252,6 +254,8 @@ async fn live_app_server_command_execution_strips_shell_wrapper() {
                 cwd: test_path_buf("/tmp").abs(),
                 process_id: None,
                 source: AppServerCommandExecutionSource::UserShell,
+                what: Some("print greeting text".to_string()),
+                why: Some("verify app-server WHAT and WHY render in the TUI".to_string()),
                 status: AppServerCommandExecutionStatus::Completed,
                 command_actions: vec![AppServerCommandAction::Unknown {
                     command: script.to_string(),
@@ -271,6 +275,10 @@ async fn live_app_server_command_execution_strips_shell_wrapper() {
         "expected one completed command history cell"
     );
     let blob = lines_to_single_string(cells.first().expect("command cell"));
+    assert!(blob.contains("WHAT"));
+    assert!(blob.contains("print greeting text"));
+    assert!(blob.contains("WHY"));
+    assert!(blob.contains("verify app-server WHAT and WHY render in the TUI"));
     assert_chatwidget_snapshot!(
         "live_app_server_command_execution_strips_shell_wrapper",
         blob

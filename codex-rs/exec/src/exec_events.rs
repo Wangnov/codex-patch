@@ -155,6 +155,8 @@ pub enum CommandExecutionStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
 pub struct CommandExecutionItem {
     pub command: String,
+    pub what: Option<String>,
+    pub why: Option<String>,
     pub aggregated_output: String,
     pub exit_code: Option<i32>,
     pub status: CommandExecutionStatus,

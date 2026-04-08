@@ -73,6 +73,8 @@ pub fn build_command_execution_approval_request_item(
         cwd: payload.cwd.clone(),
         process_id: None,
         source: CommandExecutionSource::Agent,
+        what: None,
+        why: None,
         status: CommandExecutionStatus::InProgress,
         command_actions: payload
             .parsed_cmd
@@ -93,6 +95,8 @@ pub fn build_command_execution_begin_item(payload: &ExecCommandBeginEvent) -> Th
         cwd: payload.cwd.clone(),
         process_id: payload.process_id.clone(),
         source: payload.source.into(),
+        what: payload.what.clone(),
+        why: payload.why.clone(),
         status: CommandExecutionStatus::InProgress,
         command_actions: payload
             .parsed_cmd
@@ -120,6 +124,8 @@ pub fn build_command_execution_end_item(payload: &ExecCommandEndEvent) -> Thread
         cwd: payload.cwd.clone(),
         process_id: payload.process_id.clone(),
         source: payload.source.into(),
+        what: payload.what.clone(),
+        why: payload.why.clone(),
         status: (&payload.status).into(),
         command_actions: payload
             .parsed_cmd
@@ -154,6 +160,8 @@ pub fn build_item_from_guardian_event(
                 cwd: cwd.clone(),
                 process_id: None,
                 source: CommandExecutionSource::Agent,
+                what: None,
+                why: None,
                 status,
                 command_actions,
                 aggregated_output: None,
@@ -190,6 +198,8 @@ pub fn build_item_from_guardian_event(
                 cwd: cwd.clone(),
                 process_id: None,
                 source: CommandExecutionSource::Agent,
+                what: None,
+                why: None,
                 status,
                 command_actions,
                 aggregated_output: None,
