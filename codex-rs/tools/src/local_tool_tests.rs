@@ -40,19 +40,15 @@ Examples of valid command strings:
         ),
         (
             "what".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short action summary of what this command is doing.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short action summary of what this command is doing.".to_string(),
+            )),
         ),
         (
             "why".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short reason explaining why this command should be run.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short reason explaining why this command should be run.".to_string(),
+            )),
         ),
         (
             "workdir".to_string(),
@@ -137,19 +133,15 @@ fn exec_command_tool_matches_expected_spec() {
         ),
         (
             "what".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short action summary of what this command is doing.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short action summary of what this command is doing.".to_string(),
+            )),
         ),
         (
             "why".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short reason explaining why this command should be run.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short reason explaining why this command should be run.".to_string(),
+            )),
         ),
         (
             "workdir".to_string(),
@@ -283,19 +275,15 @@ fn shell_tool_with_request_permission_includes_additional_permissions() {
         ),
         (
             "what".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short action summary of what this command is doing.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short action summary of what this command is doing.".to_string(),
+            )),
         ),
         (
             "why".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short reason explaining why this command should be run.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short reason explaining why this command should be run.".to_string(),
+            )),
         ),
         (
             "workdir".to_string(),
@@ -346,11 +334,7 @@ Examples of valid command strings:
             defer_loading: None,
             parameters: JsonSchema::object(
                 properties,
-                Some(vec![
-                    "command".to_string(),
-                    "what".to_string(),
-                    "why".to_string(),
-                ]),
+                Some(vec!["command".to_string()]),
                 Some(false.into())
             ),
             output_schema: None,
@@ -426,19 +410,15 @@ Examples of valid command strings:
         ),
         (
             "what".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short action summary of what this command is doing.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short action summary of what this command is doing.".to_string(),
+            )),
         ),
         (
             "why".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short reason explaining why this command should be run.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short reason explaining why this command should be run.".to_string(),
+            )),
         ),
         (
             "workdir".to_string(),
@@ -494,7 +474,7 @@ fn exec_command_tool_does_not_require_what_why_when_disabled() {
     });
     let ToolSpec::Function(ResponsesApiTool {
         parameters:
-            JsonSchema::Object {
+            JsonSchema {
                 required: Some(required),
                 ..
             },
@@ -515,7 +495,7 @@ fn shell_tool_does_not_require_what_why_when_disabled() {
     });
     let ToolSpec::Function(ResponsesApiTool {
         parameters:
-            JsonSchema::Object {
+            JsonSchema {
                 required: Some(required),
                 ..
             },
@@ -537,7 +517,7 @@ fn shell_command_tool_does_not_require_what_why_when_disabled() {
     });
     let ToolSpec::Function(ResponsesApiTool {
         parameters:
-            JsonSchema::Object {
+            JsonSchema {
                 required: Some(required),
                 ..
             },
