@@ -1,60 +1,41 @@
-<p align="center"><code>npm i -g @openai/codex</code><br />or <code>brew install --cask codex</code></p>
-<p align="center"><strong>Codex CLI</strong> is a coding agent from OpenAI that runs locally on your computer.
-<p align="center">
-  <img src="https://github.com/openai/codex/blob/main/.github/codex-cli-splash.png" alt="Codex CLI splash" width="80%" />
-</p>
-</br>
-If you want Codex in your code editor (VS Code, Cursor, Windsurf), <a href="https://developers.openai.com/codex/ide">install in your IDE.</a>
-</br>If you want the desktop app experience, run <code>codex app</code> or visit <a href="https://chatgpt.com/codex?app-landing-page=true">the Codex App page</a>.
-</br>If you are looking for the <em>cloud-based agent</em> from OpenAI, <strong>Codex Web</strong>, go to <a href="https://chatgpt.com/codex">chatgpt.com/codex</a>.</p>
+# codex-patch
 
----
+Public mirror of `openai/codex` plus private patch automation.
 
-## Quickstart
+- `mirror/main` tracks upstream without private changes.
+- `patch/main` is the current releasable private line.
+- `replay/<tag>` branches are temporary replay branches for upstream releases.
 
-### Installing and running Codex CLI
+This repository preserves three private patch groups:
 
-Install globally with your preferred package manager:
+1. `what` / `why` plus the related `shnote` behavior
+2. default cross-provider thread listing behavior
+3. private version injection for release builds
 
-```shell
-# Install using npm
-npm install -g @openai/codex
-```
+Core automation entrypoints:
 
-```shell
-# Install using Homebrew
-brew install --cask codex
-```
+- `python3 scripts/check_latest_release.py --dry-run`
+- `python3 scripts/replay_latest_release.py --release-tag <latest-rust-tag> --dry-run`
+- `python3 scripts/replay_latest_release.py --release-tag <latest-rust-tag>` launches `codex exec` for the replay itself
+- pushing `codex-patch-rust-v*` tags triggers `.github/workflows/release-matrix.yml`
 
-Then simply run `codex` to get started.
+Agentic replay notes:
 
-<details>
-<summary>You can also go to the <a href="https://github.com/openai/codex/releases/latest">latest GitHub Release</a> and download the appropriate binary for your platform.</summary>
+- The replay plan and bookkeeping stay in Python scripts, but the actual replay and conflict resolution are executed by `codex exec`.
+- `codex exec` only handles the patch replay itself. The launcher injects the private version, syncs this repository's replay metadata and release workflows onto the replay branch, runs the minimal validation commands, records replay state, and then moves `patch/main`.
+- The launcher points `HOME` at `.codex-runtime/home`, `CODEX_HOME` at `.codex`, and `CODEX_SQLITE_HOME` at `.codex-runtime/sqlite-home`.
+- That is enough to stop this repo's Codex run from reading your global `~/.codex/config.toml` and global `~/.agents/skills`.
+- Repo-local `.codex/config.toml` and `.codex/skills/` are the intended Codex inputs for this repository.
+- `.codex/config.toml` keeps the private provider out of git. The replay launcher injects `model_providers.vm.base_url` from `CODEX_PATCH_VM_BASE_URL`, and the provider token comes from `CODEX_PATCH_VM_API_KEY`.
+- The launcher also reads optional local overrides from `.codex-runtime/codex-exec.env`, so you can keep `CODEX_PATCH_VM_BASE_URL=...` and `CODEX_PATCH_VM_API_KEY=...` on disk without committing them.
+- Active replay tracking uses lock files under `state/replays/` so the launcher does not dirty the main worktree before the agent starts.
 
-Each GitHub Release contains many executables, but in practice, you likely want one of these:
+Release matrix notes:
 
-- macOS
-  - Apple Silicon/arm64: `codex-aarch64-apple-darwin.tar.gz`
-  - x86_64 (older Mac hardware): `codex-x86_64-apple-darwin.tar.gz`
-- Linux
-  - x86_64: `codex-x86_64-unknown-linux-musl.tar.gz`
-  - arm64: `codex-aarch64-unknown-linux-musl.tar.gz`
-
-Each archive contains a single entry with the platform baked into the name (e.g., `codex-x86_64-unknown-linux-musl`), so you likely want to rename it to `codex` after extracting it.
-
-</details>
-
-### Using Codex with your ChatGPT plan
-
-Run `codex` and select **Sign in with ChatGPT**. We recommend signing into your ChatGPT account to use Codex as part of your Plus, Pro, Business, Edu, or Enterprise plan. [Learn more about what's included in your ChatGPT plan](https://help.openai.com/en/articles/11369540-codex-in-chatgpt).
-
-You can also use Codex with an API key, but this requires [additional setup](https://developers.openai.com/codex/auth#sign-in-with-an-api-key).
-
-## Docs
-
-- [**Codex Documentation**](https://developers.openai.com/codex)
-- [**Contributing**](./docs/contributing.md)
-- [**Installing & building**](./docs/install.md)
-- [**Open source fund**](./docs/open-source-fund.md)
-
-This repository is licensed under the [Apache-2.0 License](LICENSE).
+- The GitHub repository is public so the release workflow is intentionally kept on standard GitHub-hosted runners.
+- Private release artifacts only publish the `codex` CLI binary for each target platform.
+- The current matrix is pinned to `ubuntu-24.04`, `ubuntu-24.04-arm`, `macos-15-intel`, `macos-15`, `windows-2022`, and `windows-11-arm`.
+- Linux release runners install `libcap-dev` before building so `codex-linux-sandbox` can compile for the CLI package.
+- Non-Windows release builds force `CARGO_PROFILE_RELEASE_LTO=thin` to stay closer to upstream release behavior and reduce ARM runner pressure.
+- The Windows ARM CLI build adds `/arm64hazardfree` to the MSVC linker flags to avoid the known `LNK1322` Cortex-A53 hazard check failure.
+- Avoid larger runners and custom runner groups unless the release requirements change and the workflow is revalidated first.
