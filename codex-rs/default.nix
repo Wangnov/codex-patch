@@ -7,7 +7,7 @@
   pkg-config,
   lib,
   stdenv,
-  version ? "0.0.0",
+  version ? "0.121.0-p1",
   ...
 }:
 rustPlatform.buildRustPackage (_: {
