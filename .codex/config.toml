@@ -1,17 +1,19 @@
 # Repo-local Codex configuration for codex-patch.
 #
-# The agentic replay launcher sets:
+# The agentic replay launcher copies this file plus repo-local prompts and skills
+# into .codex-runtime/codex-home, then sets:
 # - HOME -> .codex-runtime/home
-# - CODEX_HOME -> .codex
+# - CODEX_HOME -> .codex-runtime/codex-home
 # - CODEX_SQLITE_HOME -> .codex-runtime/sqlite-home
 #
 # That keeps Codex from reading the user's global ~/.codex/config.toml and
-# ~/.agents/skills while making this repository's .codex/ tree authoritative.
+# ~/.agents/skills while making this repository's tracked Codex inputs
+# authoritative for replay runs.
 #
-# This repository is public, so private provider details are intentionally
-# sourced from local runtime inputs instead of being committed here.
+# When ~/.codex/auth.json exists, the launcher bridges it into the runtime
+# CODEX_HOME so official OpenAI replay auth stays outside git.
 
-model_provider = "vm"
+model_provider = "openai"
 model = "gpt-5.4"
 service_tier = "fast"
 model_reasoning_effort = "xhigh"
@@ -19,14 +21,6 @@ plan_mode_reasoning_effort = "xhigh"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
 web_search = "live"
-
-[model_providers.vm]
-name = "vm"
-wire_api = "responses"
-# The replay launcher injects model_providers.vm.base_url at runtime from
-# CODEX_PATCH_VM_BASE_URL.
-env_key = "CODEX_PATCH_VM_API_KEY"
-env_key_instructions = "Set CODEX_PATCH_VM_API_KEY and CODEX_PATCH_VM_BASE_URL before running codex exec or replay workflows."
 
 [skills.bundled]
 enabled = true

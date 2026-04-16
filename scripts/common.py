@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 from datetime import datetime
 from datetime import timezone
@@ -18,6 +19,7 @@ RELEASE_MANIFEST_PATH = REPO_ROOT / "release" / "release-manifest.json"
 REPLAY_RESULTS_DIR = REPO_ROOT / "state" / "replays"
 CODEX_CONFIG_DIR = REPO_ROOT / ".codex"
 CODEX_RUNTIME_DIR = REPO_ROOT / ".codex-runtime"
+RUNTIME_CODEX_INPUTS = ("config.toml", "prompts", "skills")
 
 
 def utc_now_iso() -> str:
@@ -76,10 +78,12 @@ def repo_runtime_paths(repo_root: Path = REPO_ROOT) -> JSONDict:
     return {
         "runtime_root": runtime_root,
         "home": runtime_root / "home",
-        "codex_home": repo_root / ".codex",
+        "repo_codex_source": repo_root / ".codex",
+        "codex_home": runtime_root / "codex-home",
         "env_file": runtime_root / "codex-exec.env",
         "sqlite_home": runtime_root / "sqlite-home",
         "last_message_dir": runtime_root / "last-message",
+        "runtime_auth_path": runtime_root / "codex-home" / "auth.json",
     }
 
 
@@ -89,6 +93,41 @@ def ensure_repo_runtime_dirs(repo_root: Path = REPO_ROOT) -> JSONDict:
         Path(paths[key]).mkdir(parents=True, exist_ok=True)
     (Path(paths["home"]) / ".agents" / "skills").mkdir(parents=True, exist_ok=True)
     return paths
+
+
+def host_codex_auth_path() -> Path:
+    home = os.environ.get("HOME")
+    if home:
+        return Path(home).expanduser() / ".codex" / "auth.json"
+    return Path.home() / ".codex" / "auth.json"
+
+
+def sync_repo_codex_inputs_to_runtime(paths: JSONDict) -> None:
+    repo_codex_source = Path(paths["repo_codex_source"])
+    runtime_codex_home = Path(paths["codex_home"])
+    shutil.rmtree(runtime_codex_home, ignore_errors=True)
+    runtime_codex_home.mkdir(parents=True, exist_ok=True)
+
+    for name in RUNTIME_CODEX_INPUTS:
+        source = repo_codex_source / name
+        destination = runtime_codex_home / name
+        if not source.exists():
+            continue
+        if source.is_dir():
+            shutil.copytree(source, destination)
+            continue
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+
+
+def bridge_host_auth_to_runtime(paths: JSONDict) -> None:
+    source = host_codex_auth_path()
+    if not source.exists():
+        return
+
+    destination = Path(paths["runtime_auth_path"])
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination)
 
 
 def load_runtime_env_file(path: Path) -> dict[str, str]:
@@ -109,6 +148,8 @@ def load_runtime_env_file(path: Path) -> dict[str, str]:
 
 def codex_exec_environment(repo_root: Path = REPO_ROOT) -> dict[str, str]:
     paths = ensure_repo_runtime_dirs(repo_root)
+    sync_repo_codex_inputs_to_runtime(paths)
+    bridge_host_auth_to_runtime(paths)
     env = dict(os.environ)
     for key, value in load_runtime_env_file(Path(paths["env_file"])).items():
         env.setdefault(key, value)

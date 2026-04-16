@@ -23,8 +23,8 @@ class ReplayBranchTests(unittest.TestCase):
             env_file.write_text(
                 (
                     "# comment\n"
-                    "CODEX_PATCH_VM_API_KEY=test-token\n"
-                    "CODEX_PATCH_VM_BASE_URL=https://example.invalid/v1\n"
+                    "OPENAI_API_KEY=test-token\n"
+                    "OPENAI_ORG=org-example\n"
                     "EMPTY_VALUE=\n"
                 ),
                 encoding="utf-8",
@@ -33,8 +33,8 @@ class ReplayBranchTests(unittest.TestCase):
             self.assertEqual(
                 load_runtime_env_file(env_file),
                 {
-                    "CODEX_PATCH_VM_API_KEY": "test-token",
-                    "CODEX_PATCH_VM_BASE_URL": "https://example.invalid/v1",
+                    "OPENAI_API_KEY": "test-token",
+                    "OPENAI_ORG": "org-example",
                     "EMPTY_VALUE": "",
                 },
             )
@@ -99,30 +99,30 @@ class ReplayBranchTests(unittest.TestCase):
             self.assertEqual(plan["private_git_tag"], "codex-patch-rust-v0.119.0-p2")
             self.assertTrue(plan["agentic_replay"]["global_config_isolated"])
             self.assertTrue(plan["agentic_replay"]["global_skills_isolated"])
+            self.assertEqual(plan["agentic_replay"]["provider"], "openai")
             self.assertEqual(
                 plan["agentic_replay"]["runtime_home"],
                 ".codex-runtime/home",
             )
             self.assertEqual(
-                plan["agentic_replay"]["repo_codex_home"],
+                plan["agentic_replay"]["repo_codex_source"],
                 ".codex",
+            )
+            self.assertEqual(
+                plan["agentic_replay"]["runtime_auth_source"],
+                "~/.codex/auth.json",
+            )
+            self.assertEqual(
+                plan["agentic_replay"]["runtime_codex_home"],
+                ".codex-runtime/codex-home",
             )
             self.assertEqual(
                 plan["agentic_replay"]["runtime_env_file"],
                 ".codex-runtime/codex-exec.env",
             )
-            self.assertEqual(
-                plan["agentic_replay"]["runtime_provider_api_key_env"],
-                "CODEX_PATCH_VM_API_KEY",
-            )
-            self.assertEqual(
-                plan["agentic_replay"]["runtime_provider_base_url_env"],
-                "CODEX_PATCH_VM_BASE_URL",
-            )
-            self.assertEqual(
-                plan["agentic_replay"]["runtime_sqlite_home"],
-                ".codex-runtime/sqlite-home",
-            )
+            self.assertTrue(plan["agentic_replay"]["runtime_auth_source_optional"])
+            self.assertEqual(plan["agentic_replay"]["command"][3:5], ["--config", 'model_provider="openai"'])
+            self.assertEqual(plan["agentic_replay"]["runtime_sqlite_home"], ".codex-runtime/sqlite-home")
 
     def test_refuses_when_any_replay_lock_exists(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -135,15 +135,20 @@ class ReplayBranchTests(unittest.TestCase):
 
             self.assertTrue(refuse_when_replay_active(repo_root))
 
-    def test_codex_exec_environment_uses_repo_local_home_and_codex_home(self) -> None:
+    def test_codex_exec_environment_uses_runtime_home_and_runtime_codex_home(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             repo_root = Path(tmpdir)
+            (repo_root / ".codex").mkdir(parents=True)
+            (repo_root / ".codex" / "config.toml").write_text(
+                'model_provider = "openai"\n',
+                encoding="utf-8",
+            )
             env = codex_exec_environment(repo_root)
 
             self.assertEqual(env["HOME"], str(repo_root / ".codex-runtime" / "home"))
             self.assertEqual(
                 env["CODEX_HOME"],
-                str(repo_root / ".codex"),
+                str(repo_root / ".codex-runtime" / "codex-home"),
             )
             self.assertEqual(
                 env["CODEX_SQLITE_HOME"],
@@ -153,45 +158,121 @@ class ReplayBranchTests(unittest.TestCase):
     def test_codex_exec_environment_loads_repo_runtime_env_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             repo_root = Path(tmpdir)
+            (repo_root / ".codex").mkdir(parents=True)
+            (repo_root / ".codex" / "config.toml").write_text(
+                'model_provider = "openai"\n',
+                encoding="utf-8",
+            )
             runtime_env_file = repo_root / ".codex-runtime" / "codex-exec.env"
             runtime_env_file.parent.mkdir(parents=True)
             runtime_env_file.write_text(
                 (
-                    "CODEX_PATCH_VM_API_KEY=runtime-token\n"
-                    "CODEX_PATCH_VM_BASE_URL=https://example.invalid/v1\n"
+                    "OPENAI_API_KEY=runtime-token\n"
+                    "OPENAI_ORG=org-example\n"
                 ),
                 encoding="utf-8",
             )
 
-            original_token = os.environ.pop("CODEX_PATCH_VM_API_KEY", None)
-            original_base_url = os.environ.pop("CODEX_PATCH_VM_BASE_URL", None)
+            original_token = os.environ.pop("OPENAI_API_KEY", None)
+            original_org = os.environ.pop("OPENAI_ORG", None)
             try:
                 env = codex_exec_environment(repo_root)
             finally:
                 if original_token is not None:
-                    os.environ["CODEX_PATCH_VM_API_KEY"] = original_token
-                if original_base_url is not None:
-                    os.environ["CODEX_PATCH_VM_BASE_URL"] = original_base_url
+                    os.environ["OPENAI_API_KEY"] = original_token
+                if original_org is not None:
+                    os.environ["OPENAI_ORG"] = original_org
 
-            self.assertEqual(env["CODEX_PATCH_VM_API_KEY"], "runtime-token")
-            self.assertEqual(
-                env["CODEX_PATCH_VM_BASE_URL"],
-                "https://example.invalid/v1",
+            self.assertEqual(env["OPENAI_API_KEY"], "runtime-token")
+            self.assertEqual(env["OPENAI_ORG"], "org-example")
+
+    def test_codex_exec_environment_copies_repo_codex_inputs_into_runtime_home(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir)
+            (repo_root / ".codex" / "prompts").mkdir(parents=True)
+            (repo_root / ".codex" / "skills" / "custom-skill").mkdir(parents=True)
+            (repo_root / ".codex" / "config.toml").write_text(
+                'model_provider = "openai"\n',
+                encoding="utf-8",
+            )
+            (repo_root / ".codex" / "prompts" / "replay-latest-release.md").write_text(
+                "prompt body\n",
+                encoding="utf-8",
+            )
+            (repo_root / ".codex" / "skills" / "custom-skill" / "SKILL.md").write_text(
+                "skill body\n",
+                encoding="utf-8",
             )
 
-    def test_codex_exec_runtime_config_args_use_private_base_url_env(self) -> None:
-        args = codex_exec_runtime_config_args(
-            {
-                "CODEX_PATCH_VM_API_KEY": "runtime-token",
-                "CODEX_PATCH_VM_BASE_URL": "https://example.invalid/v1",
-            }
-        )
+            codex_exec_environment(repo_root)
+
+            runtime_codex_home = repo_root / ".codex-runtime" / "codex-home"
+            self.assertEqual(
+                (runtime_codex_home / "config.toml").read_text(encoding="utf-8"),
+                'model_provider = "openai"\n',
+            )
+            self.assertEqual(
+                (
+                    runtime_codex_home
+                    / "prompts"
+                    / "replay-latest-release.md"
+                ).read_text(encoding="utf-8"),
+                "prompt body\n",
+            )
+            self.assertEqual(
+                (
+                    runtime_codex_home
+                    / "skills"
+                    / "custom-skill"
+                    / "SKILL.md"
+                ).read_text(encoding="utf-8"),
+                "skill body\n",
+            )
+
+    def test_codex_exec_environment_bridges_host_auth_json_into_runtime_home(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir) / "repo"
+            host_home = Path(tmpdir) / "home"
+            repo_root.mkdir(parents=True)
+            (repo_root / ".codex").mkdir(parents=True)
+            (repo_root / ".codex" / "config.toml").write_text(
+                'model_provider = "openai"\n',
+                encoding="utf-8",
+            )
+            (host_home / ".codex").mkdir(parents=True)
+            (host_home / ".codex" / "auth.json").write_text(
+                '{"provider":"openai"}\n',
+                encoding="utf-8",
+            )
+
+            original_home = os.environ.get("HOME")
+            try:
+                os.environ["HOME"] = str(host_home)
+                codex_exec_environment(repo_root)
+            finally:
+                if original_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = original_home
+
+            self.assertEqual(
+                (
+                    repo_root
+                    / ".codex-runtime"
+                    / "codex-home"
+                    / "auth.json"
+                ).read_text(encoding="utf-8"),
+                '{"provider":"openai"}\n',
+            )
+
+    def test_codex_exec_runtime_config_args_force_openai_provider(self) -> None:
+        args = codex_exec_runtime_config_args()
 
         self.assertEqual(
             args,
             [
                 "--config",
-                'model_providers.vm.base_url="https://example.invalid/v1"',
+                'model_provider="openai"',
             ],
         )
 

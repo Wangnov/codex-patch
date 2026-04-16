@@ -50,8 +50,6 @@ VERSION_TOUCHPOINTS = [
 
 STATE_FILE = "state/latest-release.json"
 PROMPT_TEMPLATE = ".codex/prompts/replay-latest-release.md"
-PRIVATE_PROVIDER_API_KEY_ENV = "CODEX_PATCH_VM_API_KEY"
-PRIVATE_PROVIDER_BASE_URL_ENV = "CODEX_PATCH_VM_BASE_URL"
 PATCH_REPO_METADATA_SOURCE_REF = "patch/main"
 PATCH_REPO_METADATA_TOUCHPOINTS = (
     ".codex",
@@ -180,23 +178,13 @@ def render_agentic_replay_prompt(repo_root: Path, release_tag: str, plan: JSONDi
     )
 
 
-def codex_exec_runtime_config_args(env: dict[str, str]) -> list[str]:
-    missing = [
-        name
-        for name in (PRIVATE_PROVIDER_API_KEY_ENV, PRIVATE_PROVIDER_BASE_URL_ENV)
-        if not env.get(name, "").strip()
-    ]
-    if missing:
-        missing_names = ", ".join(missing)
-        raise RuntimeError(
-            f"Missing required replay runtime settings: {missing_names}. "
-            "Set them in the shell environment or in .codex-runtime/codex-exec.env."
-        )
-
-    base_url = env[PRIVATE_PROVIDER_BASE_URL_ENV].strip()
+def codex_exec_runtime_config_args(env: dict[str, str] | None = None) -> list[str]:
+    del env
+    # Keep the provider explicit so replay runs stay on the official OpenAI path
+    # even after Codex writes project trust state into the runtime config copy.
     return [
         "--config",
-        f"model_providers.vm.base_url={json.dumps(base_url)}",
+        'model_provider="openai"',
     ]
 
 
@@ -205,11 +193,13 @@ def codex_exec_command(
     release_tag: str,
     runtime_config_args: list[str] | None = None,
 ) -> list[str]:
+    if runtime_config_args is None:
+        runtime_config_args = codex_exec_runtime_config_args()
     return [
         "codex",
         "exec",
         "--dangerously-bypass-approvals-and-sandbox",
-        *(runtime_config_args or []),
+        *runtime_config_args,
         "--output-last-message",
         str(codex_last_message_path(repo_root, release_tag)),
         "-C",
@@ -316,11 +306,13 @@ def replay_plan(repo_root: Path, release_tag: str) -> JSONDict:
             "global_skills_isolated": True,
             "last_message_file": str(codex_last_message_path(repo_root, release_tag).relative_to(repo_root)),
             "prompt_template": PROMPT_TEMPLATE,
-            "repo_codex_home": str(Path(runtime_paths["codex_home"]).relative_to(repo_root)),
+            "provider": "openai",
+            "repo_codex_source": str(Path(runtime_paths["repo_codex_source"]).relative_to(repo_root)),
+            "runtime_auth_source": "~/.codex/auth.json",
+            "runtime_auth_source_optional": True,
+            "runtime_codex_home": str(Path(runtime_paths["codex_home"]).relative_to(repo_root)),
             "runtime_env_file": str(Path(runtime_paths["env_file"]).relative_to(repo_root)),
             "runtime_home": str(Path(runtime_paths["home"]).relative_to(repo_root)),
-            "runtime_provider_api_key_env": PRIVATE_PROVIDER_API_KEY_ENV,
-            "runtime_provider_base_url_env": PRIVATE_PROVIDER_BASE_URL_ENV,
             "runtime_sqlite_home": str(Path(runtime_paths["sqlite_home"]).relative_to(repo_root)),
         },
         "display_version": display_version,

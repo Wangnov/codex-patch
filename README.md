@@ -23,11 +23,10 @@ Agentic replay notes:
 
 - The replay plan and bookkeeping stay in Python scripts, but the actual replay and conflict resolution are executed by `codex exec`.
 - `codex exec` only handles the patch replay itself. The launcher injects the private version, syncs this repository's replay metadata and release workflows onto the replay branch, runs the minimal validation commands, records replay state, and then moves `patch/main`.
-- The launcher points `HOME` at `.codex-runtime/home`, `CODEX_HOME` at `.codex`, and `CODEX_SQLITE_HOME` at `.codex-runtime/sqlite-home`.
-- That is enough to stop this repo's Codex run from reading your global `~/.codex/config.toml` and global `~/.agents/skills`.
-- Repo-local `.codex/config.toml` and `.codex/skills/` are the intended Codex inputs for this repository.
-- `.codex/config.toml` keeps the private provider out of git. The replay launcher injects `model_providers.vm.base_url` from `CODEX_PATCH_VM_BASE_URL`, and the provider token comes from `CODEX_PATCH_VM_API_KEY`.
-- The launcher also reads optional local overrides from `.codex-runtime/codex-exec.env`, so you can keep `CODEX_PATCH_VM_BASE_URL=...` and `CODEX_PATCH_VM_API_KEY=...` on disk without committing them.
+- The launcher points `HOME` at `.codex-runtime/home`, `CODEX_HOME` at `.codex-runtime/codex-home`, and `CODEX_SQLITE_HOME` at `.codex-runtime/sqlite-home`.
+- The launcher copies repo-local `.codex/config.toml`, `.codex/prompts/`, and `.codex/skills/` into `.codex-runtime/codex-home` before each replay run, so tracked replay inputs stay authoritative and tracked files stay clean.
+- Official replay auth comes from the OpenAI provider. When `~/.codex/auth.json` exists, the launcher copies it into the runtime `CODEX_HOME`.
+- The launcher also reads optional local overrides from `.codex-runtime/codex-exec.env`, so you can keep values such as `OPENAI_API_KEY=...` on disk without committing them.
 - Active replay tracking uses lock files under `state/replays/` so the launcher does not dirty the main worktree before the agent starts.
 
 Release matrix notes:
