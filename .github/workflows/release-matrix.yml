@@ -1,0 +1,170 @@
+name: release-matrix
+
+on:
+  push:
+    tags:
+      - "codex-patch-rust-v*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  tag-check:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      display_version: ${{ steps.release.outputs.display_version }}
+      release_tag: ${{ steps.release.outputs.release_tag }}
+      upstream_tag: ${{ steps.release.outputs.upstream_tag }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Validate private release metadata
+        id: release
+        shell: bash
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import tomllib
+          from pathlib import Path
+
+          release_manifest = json.loads(Path("release/release-manifest.json").read_text(encoding="utf-8"))
+          release_tag = os.environ["GITHUB_REF_NAME"]
+          display_version = release_manifest["display_version"]
+          upstream_tag = release_manifest["upstream_tag"]
+          replay_result = Path("state") / "replays" / f"{upstream_tag}.json"
+
+          if release_manifest["private_git_tag"] != release_tag:
+              raise SystemExit(
+                  f"release-manifest private_git_tag {release_manifest['private_git_tag']} does not match pushed tag {release_tag}"
+              )
+
+          cargo_manifest = tomllib.loads(Path("codex-rs/Cargo.toml").read_text(encoding="utf-8"))
+          cargo_version = cargo_manifest["workspace"]["package"]["version"]
+          if cargo_version != display_version:
+              raise SystemExit(f"Cargo.toml version {cargo_version} does not match {display_version}")
+
+          package_paths = [Path("codex-cli/package.json")]
+          for package_path in package_paths:
+              package_version = json.loads(package_path.read_text(encoding="utf-8"))["version"]
+              if package_version != display_version:
+                  raise SystemExit(
+                      f"{package_path} version {package_version} does not match {display_version}"
+                  )
+
+          if not replay_result.exists():
+              raise SystemExit(f"Missing replay result file: {replay_result}")
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"display_version={display_version}\n")
+              handle.write(f"release_tag={release_tag}\n")
+              handle.write(f"upstream_tag={upstream_tag}\n")
+          PY
+
+  build:
+    needs: tag-check
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            release_lto: thin
+            target_rustflags: ""
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            release_lto: thin
+            target_rustflags: ""
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            release_lto: thin
+            target_rustflags: ""
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            release_lto: thin
+            target_rustflags: ""
+          - runner: windows-2022
+            target: x86_64-pc-windows-msvc
+            release_lto: fat
+            target_rustflags: ""
+          - runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            release_lto: fat
+            target_rustflags: -C link-arg=/arm64hazardfree
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: dtolnay/rust-toolchain@a0b273b48ed29de4470960879e8381ff45632f26 # 1.93.0
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libcap-dev
+
+      - name: Build release binaries
+        shell: bash
+        env:
+          CARGO_PROFILE_RELEASE_LTO: ${{ matrix.release_lto }}
+          CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_RUSTFLAGS: ${{ matrix.target_rustflags }}
+        run: |
+          set -euo pipefail
+
+          echo "CARGO_PROFILE_RELEASE_LTO=${CARGO_PROFILE_RELEASE_LTO}"
+          if [[ "${{ matrix.target }}" == "aarch64-pc-windows-msvc" ]]; then
+            echo "CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_RUSTFLAGS=${CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_RUSTFLAGS}"
+          fi
+
+          cargo build \
+            --manifest-path codex-rs/Cargo.toml \
+            --target "${{ matrix.target }}" \
+            --release \
+            --bin codex
+
+      - name: Stage release payload
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          suffix=""
+          if [[ "${{ matrix.target }}" == *windows* ]]; then
+            suffix=".exe"
+          fi
+
+          stage_dir="dist/${{ matrix.target }}"
+          release_dir="codex-rs/target/${{ matrix.target }}/release"
+          mkdir -p "${stage_dir}"
+
+          cp "${release_dir}/codex${suffix}" "${stage_dir}/"
+
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          if-no-files-found: error
+          name: release-${{ matrix.target }}
+          path: dist/${{ matrix.target }}/*
+
+  draft-release:
+    needs:
+      - tag-check
+      - build
+    uses: ./.github/workflows/release-draft.yml
+    permissions:
+      contents: write
+    secrets: inherit
+    with:
+      display_version: ${{ needs.tag-check.outputs.display_version }}
+      release_tag: ${{ needs.tag-check.outputs.release_tag }}
+      upstream_tag: ${{ needs.tag-check.outputs.upstream_tag }}
