@@ -4,11 +4,11 @@
     "cross-provider-defaults",
     "private-version-injection"
   ],
-  "display_version": "0.121.0-p2",
+  "display_version": "0.121.0-p1",
   "origin_remote_configured": true,
   "outcome": "success",
-  "private_git_tag": "codex-patch-rust-v0.121.0-p2",
-  "recorded_at": "2026-04-16T00:20:05Z",
+  "private_git_tag": "codex-patch-rust-v0.121.0-p1",
+  "recorded_at": "2026-04-16T00:20:29Z",
   "replay_branch": "replay/rust-v0.121.0",
   "upstream_release_tag": "rust-v0.121.0",
   "validations_run": [
