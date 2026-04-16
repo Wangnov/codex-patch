@@ -76,6 +76,7 @@ fn shell_command_payload_command(payload: &ToolPayload) -> Option<String> {
 
 struct RunExecLikeArgs {
     tool_name: String,
+    require_command_purpose: bool,
     exec_params: ExecParams,
     additional_permissions: Option<PermissionProfile>,
     prefix_rule: Option<Vec<String>>,
@@ -267,17 +268,12 @@ impl ToolHandler for ShellHandler {
             ToolPayload::Function { arguments } => {
                 let cwd = resolve_workdir_base_path(&arguments, &turn.cwd)?;
                 let params: ShellToolCallParams = parse_arguments_with_base_path(&arguments, &cwd)?;
-                validate_command_purpose(
-                    tool_name.as_str(),
-                    turn.tools_config.require_command_purpose,
-                    params.what.as_deref(),
-                    params.why.as_deref(),
-                )?;
                 let prefix_rule = params.prefix_rule.clone();
                 let exec_params =
                     Self::to_exec_params(&params, turn.as_ref(), session.conversation_id);
                 Self::run_exec_like(RunExecLikeArgs {
                     tool_name: tool_name.display(),
+                    require_command_purpose: turn.tools_config.require_command_purpose,
                     exec_params,
                     additional_permissions: params.additional_permissions.clone(),
                     prefix_rule,
@@ -297,6 +293,7 @@ impl ToolHandler for ShellHandler {
                     Self::to_exec_params(&params, turn.as_ref(), session.conversation_id);
                 Self::run_exec_like(RunExecLikeArgs {
                     tool_name: tool_name.display(),
+                    require_command_purpose: false,
                     exec_params,
                     additional_permissions: None,
                     prefix_rule: None,
@@ -395,12 +392,6 @@ impl ToolHandler for ShellCommandHandler {
         let cwd = resolve_workdir_base_path(&arguments, &turn.cwd)?;
         let params: ShellCommandToolCallParams = parse_arguments_with_base_path(&arguments, &cwd)?;
         let workdir = turn.resolve_path(params.workdir.clone());
-        validate_command_purpose(
-            tool_name.as_str(),
-            turn.tools_config.require_command_purpose,
-            params.what.as_deref(),
-            params.why.as_deref(),
-        )?;
         maybe_emit_implicit_skill_invocation(
             session.as_ref(),
             turn.as_ref(),
@@ -418,6 +409,7 @@ impl ToolHandler for ShellCommandHandler {
         )?;
         ShellHandler::run_exec_like(RunExecLikeArgs {
             tool_name: tool_name.display(),
+            require_command_purpose: turn.tools_config.require_command_purpose,
             exec_params,
             additional_permissions: params.additional_permissions.clone(),
             prefix_rule,
@@ -438,6 +430,7 @@ impl ShellHandler {
     async fn run_exec_like(args: RunExecLikeArgs) -> Result<FunctionToolOutput, FunctionCallError> {
         let RunExecLikeArgs {
             tool_name,
+            require_command_purpose,
             exec_params,
             additional_permissions,
             prefix_rule,
@@ -520,6 +513,13 @@ impl ShellHandler {
                 "approval policy is {approval_policy:?}; reject command — you should not ask for escalated permissions if the approval policy is {approval_policy:?}"
             )));
         }
+
+        validate_command_purpose(
+            tool_name.as_str(),
+            require_command_purpose,
+            what.as_deref(),
+            why.as_deref(),
+        )?;
 
         // Intercept apply_patch if present.
         if let Some(output) = intercept_apply_patch(
@@ -640,6 +640,10 @@ impl ShellHandler {
 mod tests {
     use super::ShellCommandHandler;
     use super::validate_command_purpose;
+    use core_test_support::test_absolute_path;
+    use codex_shell_command::is_safe_command::is_known_safe_command;
+    use codex_shell_command::powershell::try_find_powershell_executable_blocking;
+    use codex_shell_command::powershell::try_find_pwsh_executable_blocking;
     use std::path::PathBuf;
     use std::sync::Arc;
 
@@ -648,9 +652,6 @@ mod tests {
 
     use crate::codex::make_session_and_context;
     use crate::exec_env::create_env;
-    use crate::is_safe_command::is_known_safe_command;
-    use crate::powershell::try_find_powershell_executable_blocking;
-    use crate::powershell::try_find_pwsh_executable_blocking;
     use crate::sandboxing::SandboxPermissions;
     use crate::shell::Shell;
     use crate::shell::ShellType;
@@ -758,8 +759,8 @@ mod tests {
     #[test]
     fn shell_command_handler_respects_explicit_login_flag() {
         let (_tx, shell_snapshot) = watch::channel(Some(Arc::new(ShellSnapshot {
-            path: PathBuf::from("/tmp/snapshot.sh"),
-            cwd: PathBuf::from("/tmp"),
+            path: test_absolute_path("/tmp/snapshot.sh"),
+            cwd: test_absolute_path("/tmp"),
         })));
         let shell = Shell {
             shell_type: ShellType::Bash,

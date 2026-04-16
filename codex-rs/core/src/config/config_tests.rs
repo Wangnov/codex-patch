@@ -4574,6 +4574,7 @@ fn test_precedence_fixture_with_o3_profile() -> std::io::Result<()> {
                 windows_sandbox_mode: None,
                 windows_sandbox_private_desktop: true,
             },
+            approvals_reviewer: ApprovalsReviewer::User,
             shnote: true,
             enforce_residency: Constrained::allow_any(None),
             user_instructions: None,
@@ -4723,6 +4724,7 @@ fn test_precedence_fixture_with_gpt3_profile() -> std::io::Result<()> {
             windows_sandbox_mode: None,
             windows_sandbox_private_desktop: true,
         },
+        approvals_reviewer: ApprovalsReviewer::User,
         shnote: true,
         enforce_residency: Constrained::allow_any(None),
         user_instructions: None,
@@ -4870,6 +4872,7 @@ fn test_precedence_fixture_with_zdr_profile() -> std::io::Result<()> {
             windows_sandbox_mode: None,
             windows_sandbox_private_desktop: true,
         },
+        approvals_reviewer: ApprovalsReviewer::User,
         shnote: true,
         enforce_residency: Constrained::allow_any(None),
         user_instructions: None,
@@ -5003,6 +5006,7 @@ fn test_precedence_fixture_with_gpt5_profile() -> std::io::Result<()> {
             windows_sandbox_mode: None,
             windows_sandbox_private_desktop: true,
         },
+        approvals_reviewer: ApprovalsReviewer::User,
         shnote: true,
         enforce_residency: Constrained::allow_any(None),
         user_instructions: None,
@@ -5626,7 +5630,7 @@ fn config_defaults_shnote_to_true() -> std::io::Result<()> {
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml::default(),
         ConfigOverrides::default(),
-        codex_home.path().to_path_buf(),
+        codex_home.abs(),
     )?;
 
     assert!(config.shnote);
@@ -5647,7 +5651,7 @@ shnote = false
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.path().to_path_buf(),
+        codex_home.abs(),
     )?;
 
     assert!(!config.shnote);

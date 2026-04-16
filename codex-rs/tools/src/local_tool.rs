@@ -26,19 +26,15 @@ pub fn create_exec_command_tool(options: CommandToolOptions) -> ToolSpec {
         ),
         (
             "what".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short action summary of what this command is doing.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short action summary of what this command is doing.".to_string(),
+            )),
         ),
         (
             "why".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short reason explaining why this command should be run.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short reason explaining why this command should be run.".to_string(),
+            )),
         ),
         (
             "workdir".to_string(),
@@ -168,19 +164,15 @@ pub fn create_shell_tool(options: ShellToolOptions) -> ToolSpec {
         ),
         (
             "what".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short action summary of what this command is doing.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short action summary of what this command is doing.".to_string(),
+            )),
         ),
         (
             "why".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short reason explaining why this command should be run.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short reason explaining why this command should be run.".to_string(),
+            )),
         ),
         (
             "workdir".to_string(),
@@ -252,19 +244,15 @@ pub fn create_shell_command_tool(options: CommandToolOptions) -> ToolSpec {
         ),
         (
             "what".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short action summary of what this command is doing.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short action summary of what this command is doing.".to_string(),
+            )),
         ),
         (
             "why".to_string(),
-            JsonSchema::String {
-                description: Some(
-                    "A short reason explaining why this command should be run.".to_string(),
-                ),
-            },
+            JsonSchema::string(Some(
+                "A short reason explaining why this command should be run.".to_string(),
+            )),
         ),
         (
             "workdir".to_string(),

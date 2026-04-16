@@ -107,7 +107,6 @@ fn validate_command_purpose(
     }
 }
 
-#[async_trait]
 impl ToolHandler for UnifiedExecHandler {
     type Output = ExecCommandToolOutput;
 
@@ -220,20 +219,7 @@ impl ToolHandler for UnifiedExecHandler {
             "exec_command" => {
                 let cwd = resolve_workdir_base_path(&arguments, &context.turn.cwd)?;
                 let args: ExecCommandArgs = parse_arguments_with_base_path(&arguments, &cwd)?;
-                let workdir = context.turn.resolve_path(args.workdir.clone());
-                validate_command_purpose(
-                    tool_name.as_str(),
-                    turn.tools_config.require_command_purpose,
-                    args.what.as_deref(),
-                    args.why.as_deref(),
-                )?;
-                maybe_emit_implicit_skill_invocation(
-                    session.as_ref(),
-                    context.turn.as_ref(),
-                    &args.cmd,
-                    &workdir,
-                )
-                .await;
+                let resolved_workdir = context.turn.resolve_path(args.workdir.clone());
                 let process_id = manager.allocate_process_id().await;
                 let command = get_command(
                     &args,
@@ -245,6 +231,7 @@ impl ToolHandler for UnifiedExecHandler {
                 let command_for_display = codex_shell_command::parse_command::shlex_join(&command);
 
                 let ExecCommandArgs {
+                    cmd,
                     what,
                     why,
                     workdir,
@@ -288,6 +275,20 @@ impl ToolHandler for UnifiedExecHandler {
                         "approval policy is {approval_policy:?}; reject command — you cannot ask for escalated permissions if the approval policy is {approval_policy:?}"
                     )));
                 }
+
+                validate_command_purpose(
+                    tool_name.name.as_str(),
+                    turn.tools_config.require_command_purpose,
+                    what.as_deref(),
+                    why.as_deref(),
+                )?;
+                maybe_emit_implicit_skill_invocation(
+                    session.as_ref(),
+                    context.turn.as_ref(),
+                    &cmd,
+                    &resolved_workdir,
+                )
+                .await;
 
                 let workdir = workdir.filter(|value| !value.is_empty());
 

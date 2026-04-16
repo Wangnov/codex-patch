@@ -366,6 +366,8 @@ async fn exec_end_without_begin_uses_event_command() {
             turn_id: "turn-1".to_string(),
             command,
             cwd,
+            what: None,
+            why: None,
             parsed_cmd,
             source: ExecCommandSource::Agent,
             interaction_input: None,

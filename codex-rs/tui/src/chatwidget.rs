@@ -5863,6 +5863,8 @@ impl ChatWidget {
                         turn_id: turn_id.clone(),
                         command: split_command_string(&command),
                         cwd,
+                        what: None,
+                        why: None,
                         parsed_cmd: command_actions
                             .into_iter()
                             .map(codex_app_server_protocol::CommandAction::into_core)
@@ -5878,6 +5880,8 @@ impl ChatWidget {
                         turn_id: turn_id.clone(),
                         command: split_command_string(&command),
                         cwd,
+                        what: None,
+                        why: None,
                         parsed_cmd: command_actions
                             .into_iter()
                             .map(codex_app_server_protocol::CommandAction::into_core)
@@ -6439,6 +6443,8 @@ impl ChatWidget {
                     turn_id: notification.turn_id,
                     command: split_command_string(&command),
                     cwd,
+                    what: None,
+                    why: None,
                     parsed_cmd: command_actions
                         .into_iter()
                         .map(codex_app_server_protocol::CommandAction::into_core)
