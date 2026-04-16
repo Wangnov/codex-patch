@@ -1843,6 +1843,8 @@ mod tests {
                 process_id: Some("pid-1".into()),
                 source: CommandExecutionSource::Agent,
                 status: CommandExecutionStatus::Completed,
+                what: None,
+                why: None,
                 command_actions: vec![CommandAction::Unknown {
                     command: "echo hello world".into(),
                 }],
@@ -2057,6 +2059,8 @@ mod tests {
                 process_id: Some("pid-2".into()),
                 source: CommandExecutionSource::Agent,
                 status: CommandExecutionStatus::Declined,
+                what: None,
+                why: None,
                 command_actions: vec![CommandAction::Unknown {
                     command: "ls".into(),
                 }],
@@ -2148,6 +2152,8 @@ mod tests {
                 process_id: None,
                 source: CommandExecutionSource::Agent,
                 status: CommandExecutionStatus::Declined,
+                what: None,
+                why: None,
                 command_actions: vec![CommandAction::Unknown {
                     command: "rm -rf /tmp/guardian".into(),
                 }],
@@ -2209,6 +2215,8 @@ mod tests {
                 process_id: None,
                 source: CommandExecutionSource::Agent,
                 status: CommandExecutionStatus::InProgress,
+                what: None,
+                why: None,
                 command_actions: vec![CommandAction::Unknown {
                     command: "/bin/rm -f /tmp/file.sqlite".into(),
                 }],
@@ -2300,6 +2308,8 @@ mod tests {
                 process_id: Some("pid-42".into()),
                 source: CommandExecutionSource::Agent,
                 status: CommandExecutionStatus::Completed,
+                what: None,
+                why: None,
                 command_actions: vec![CommandAction::Unknown {
                     command: "echo done".into(),
                 }],
