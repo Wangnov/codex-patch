@@ -19,7 +19,7 @@ jobs:
       release_tag: ${{ steps.release.outputs.release_tag }}
       upstream_tag: ${{ steps.release.outputs.upstream_tag }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - name: Validate private release metadata
         id: release
@@ -101,7 +101,7 @@ jobs:
             release_lto: fat
             target_rustflags: -C link-arg=/arm64hazardfree
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - uses: dtolnay/rust-toolchain@a0b273b48ed29de4470960879e8381ff45632f26 # 1.93.0
         with:
